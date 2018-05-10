@@ -1,4 +1,4 @@
-module Page.Topic
+module Page.Home
     exposing
         ( Model
         , Msg
@@ -10,7 +10,6 @@ module Page.Topic
 import Html.Styled as Html exposing (Html)
 import Ports.Mail exposing (Mail)
 import Return2 as R2
-import Return3 as R3 exposing (Return)
 
 
 -- TYPES --
@@ -22,10 +21,6 @@ type alias Model =
 
 type Msg
     = None
-
-
-type Reply
-    = TopicUpdated
 
 
 

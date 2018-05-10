@@ -1,16 +1,29 @@
 module View exposing (view)
 
-import Css exposing (..)
-import Html.Custom exposing (input, p)
 import Html.Styled as Html exposing (Attribute, Html, div)
-import Html.Styled.Attributes exposing (css, placeholder, spellcheck, value)
-import Html.Styled.Events exposing (onInput)
 import Model exposing (Model)
-import Msg exposing (Msg(..))
+import Msg exposing (Msg(HomeMsg, TopicMsg))
 import Page
-import Util exposing (onEnter)
+import Page.Error as Error
+import Page.Home as Home
+import Page.Topic as Topic
 
 
 view : Model -> Html Msg
 view model =
-    Html.text "Argue Chan!"
+    case model.page of
+        Page.Home subModel ->
+            subModel
+                |> Home.view
+                |> Html.map HomeMsg
+
+        Page.Topic subModel ->
+            subModel
+                |> Topic.view
+                |> Html.map TopicMsg
+
+        Page.Error ->
+            Error.view
+
+        Page.Blank ->
+            Html.text ""
