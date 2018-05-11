@@ -6,6 +6,6 @@ module Page.Error
 import Html.Styled as Html exposing (Html)
 
 
-view : Html msg
+view : List (Html msg)
 view =
-    Html.text "Error!"
+    [ Html.text "Error!" ]

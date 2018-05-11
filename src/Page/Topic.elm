@@ -8,9 +8,7 @@ module Page.Topic
         )
 
 import Html.Styled as Html exposing (Html)
-import Ports.Mail exposing (Mail)
-import Return2 as R2
-import Return3 as R3 exposing (Return)
+import Return as R
 
 
 -- TYPES --
@@ -41,18 +39,18 @@ init =
 -- UPDATE --
 
 
-update : Msg -> Model -> ( Model, Mail Msg )
+update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
         None ->
             model
-                |> R2.withNoMail
+                |> R.withNoCmd
 
 
 
 -- VIEW --
 
 
-view : Model -> Html Msg
+view : Model -> List (Html Msg)
 view model =
-    Html.text ""
+    []

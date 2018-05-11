@@ -1,44 +1,44 @@
 port module Main exposing (..)
 
+import Browser
+import Browser.Navigation
 import Html.Styled exposing (toUnstyled)
+import Json.Decode exposing (Value)
 import Json.Encode
 import Model exposing (Model)
 import Msg exposing (Msg(..))
-import Navigation exposing (Location)
 import Page
 import Page.Home as Home
 import Page.Topic as Topic
-import Ports.Mail as Mail exposing (Mail)
-import Return2 as R2
+import Return as R
 import Route exposing (Route)
+import Url.Parser exposing (Url)
 import View exposing (view)
 
 
 -- MAIN --
 
 
-main : Mail.Program Never Model Msg
+main : Program Value Model Msg
 main =
-    Mail.navigationProgram
-        onNavigation
-        { init = init
-        , view = toUnstyled << view
-        , update = update
-        , subscriptions = subscriptions
-        , toJs = toJs
-        , fromJs = fromJs
-        }
+    { init = init
+    , onNavigation = Just onNavigation
+    , subscriptions = subscriptions
+    , update = update
+    , view = view
+    }
+        |> Browser.fullscreen
 
 
-onNavigation : Location -> Msg
+onNavigation : Url -> Msg
 onNavigation =
-    Route.fromLocation >> RouteChanged
+    Route.fromUrl >> RouteChanged
 
 
-init : Location -> ( Model, Mail Msg )
-init location =
+init : Browser.Env Value -> ( Model, Cmd Msg )
+init { url } =
     { page = Page.Blank }
-        |> update (onNavigation location)
+        |> update (onNavigation url)
 
 
 
@@ -54,23 +54,23 @@ subscriptions _ =
 -- UPDATE --
 
 
-update : Msg -> Model -> ( Model, Mail Msg )
+update : Msg -> Model -> ( Model, Cmd Msg )
 update message model =
     case message of
         RouteChanged (Ok route) ->
             handleRoute route model
 
         RouteChanged (Err url) ->
-            model |> R2.withNoMail
+            model |> R.withNoCmd
 
         HomeMsg subMsg ->
-            model |> R2.withNoMail
+            model |> R.withNoCmd
 
         TopicMsg subMsg ->
-            model |> R2.withNoMail
+            model |> R.withNoCmd
 
 
-handleRoute : Route -> Model -> ( Model, Mail Msg )
+handleRoute : Route -> Model -> ( Model, Cmd Msg )
 handleRoute route model =
     case route of
         Route.Home ->
@@ -78,14 +78,14 @@ handleRoute route model =
                 | page =
                     Page.Home Home.init
             }
-                |> R2.withNoMail
+                |> R.withNoCmd
 
         Route.Topic id ->
             { model
                 | page =
                     Page.Topic Topic.init
             }
-                |> R2.withNoMail
+                |> R.withNoCmd
 
 
 

@@ -25,12 +25,11 @@ gulp.task("js", function() {
 
 gulp.task("elm", function() {
   util.log(util.colors.cyan("Elm"), "starting");
-  cp.spawn("elm-make", [ 
+  cp.spawn("./elm", [ 
+    "make",
     paths.mainElm, 
-    "--warn", 
     "--output", 
     paths.public + "/elm.js",
-    "--yes"
   ], {
     stdio: 'inherit'
   }).on("close", function(code) {

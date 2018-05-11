@@ -1,13 +1,13 @@
 module Route
     exposing
         ( Route(..)
-        , fromLocation
+        , fromUrl
         , toUrl
         )
 
-import Id exposing (Id)
-import Navigation exposing (Location)
-import UrlParser as Url exposing (Parser, s)
+import Browser.Navigation
+import Data.Id as Id exposing (Id)
+import Url.Parser as Url exposing (Parser, Url, s)
 
 
 type Route
@@ -15,21 +15,17 @@ type Route
     | Topic Id
 
 
-fromLocation : Location -> Result String Route
-fromLocation location =
-    case Url.parsePath route location of
-        Just route ->
-            Ok route
-
-        Nothing ->
-            (location.origin ++ location.pathname)
-                |> Err
+fromUrl : Url -> Result String Route
+fromUrl url =
+    Url.parse routeParser url
+        |> Result.fromMaybe
+            (url.host ++ url.path)
 
 
-route : Parser (Route -> a) a
-route =
+routeParser : Parser (Route -> a) a
+routeParser =
     [ Url.map Home (s "")
-    , Url.map Topic (Url.custom "ID" (Ok << Id.fromString))
+    , Url.map Topic (Url.custom "ID" (Just << Id.fromString))
     ]
         |> Url.oneOf
 
