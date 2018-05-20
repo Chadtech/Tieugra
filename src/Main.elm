@@ -2,6 +2,7 @@ port module Main exposing (..)
 
 import Browser
 import Browser.Navigation
+import Data.Db as Db
 import Html.Styled exposing (toUnstyled)
 import Json.Decode exposing (Value)
 import Json.Encode
@@ -37,7 +38,9 @@ onNavigation =
 
 init : Browser.Env Value -> ( Model, Cmd Msg )
 init { url } =
-    { page = Page.Blank }
+    { page = Page.Blank
+    , threads = Db.empty
+    }
         |> update (onNavigation url)
 
 
@@ -55,8 +58,8 @@ subscriptions _ =
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
-update message model =
-    case message of
+update msg model =
+    case msg of
         RouteChanged (Ok route) ->
             handleRoute route model
 

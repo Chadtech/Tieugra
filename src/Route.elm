@@ -7,7 +7,7 @@ module Route
 
 import Browser.Navigation
 import Data.Id as Id exposing (Id)
-import Url.Parser as Url exposing (Parser, Url, s)
+import Url.Parser as Url exposing (Parser, Url, s, top)
 
 
 type Route
@@ -24,7 +24,7 @@ fromUrl url =
 
 routeParser : Parser (Route -> a) a
 routeParser =
-    [ Url.map Home (s "")
+    [ Url.map Home top
     , Url.map Topic (Url.custom "ID" (Just << Id.fromString))
     ]
         |> Url.oneOf

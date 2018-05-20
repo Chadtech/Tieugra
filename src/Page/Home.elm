@@ -49,4 +49,4 @@ update msg model =
 
 view : Model -> List (Html Msg)
 view model =
-    []
+    [ Html.text "Dank" ]

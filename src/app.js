@@ -1,4 +1,17 @@
+var firebase = require("firebase/app");
+require("firebase/database");
+var config = {
+	apiKey: "AIzaSyBgI3dyFZk3VXcX514LmZ-3maife9GseHo",
+	authDomain: "argue-chan.firebaseapp.com",
+	databaseURL: "https://argue-chan.firebaseio.com",
+	projectId: "argue-chan",
+	storageBucket: "",
+	messagingSenderId: "151287390405"
+};
+firebase.initializeApp(config);
+
 var app = Elm.Main.fullscreen();
+console.log(app)
 
 function toElm (type, payload) {
 	app.ports.fromJs.send({
@@ -24,6 +37,6 @@ function jsMsgHandler(msg) {
 	}
 	action(msg.payload);
 }
-
-app.ports.toJs.subscribe(jsMsgHandler)
+console.log(app);
+// app.ports.toJs.subscribe(jsMsgHandler)
 
