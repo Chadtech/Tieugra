@@ -7,7 +7,8 @@ module Route
 
 import Browser.Navigation
 import Data.Id as Id exposing (Id)
-import Url.Parser as Url exposing (Parser, Url, s, top)
+import Url exposing (Url)
+import Url.Parser as Url exposing (Parser, s, top)
 
 
 type Route

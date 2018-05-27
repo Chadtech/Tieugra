@@ -7,7 +7,12 @@ module Page.Home
         , view
         )
 
-import Html.Styled as Html exposing (Html)
+import Data.Db as Db
+import Data.Taco as Taco exposing (Taco)
+import Html exposing (Html, button)
+import Html.Attributes as Attrs
+import Html.Events exposing (onClick)
+import Ports exposing (JsMsg(..))
 import Return as R
 
 
@@ -19,7 +24,7 @@ type alias Model =
 
 
 type Msg
-    = None
+    = GetThreadsClicked
 
 
 
@@ -38,15 +43,19 @@ init =
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
-        None ->
+        GetThreadsClicked ->
             model
-                |> R.withNoCmd
+                |> R.withCmd
+                    (Ports.send GetAllThreads)
 
 
 
 -- VIEW --
 
 
-view : Model -> List (Html Msg)
-view model =
-    [ Html.text "Dank" ]
+view : Taco -> Model -> List (Html Msg)
+view taco model =
+    [ button
+        [ onClick GetThreadsClicked ]
+        [ Html.text "get threads" ]
+    ]

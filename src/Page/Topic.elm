@@ -7,7 +7,7 @@ module Page.Topic
         , view
         )
 
-import Html.Styled as Html exposing (Html)
+import Html exposing (Html)
 import Return as R
 
 

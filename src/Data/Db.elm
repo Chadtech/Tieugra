@@ -2,14 +2,15 @@ module Data.Db
     exposing
         ( Db
         , Element
+        , element
         , empty
         , getElement
         , getValue
         , id
         , insert
+        , insertMany
         , remove
         , toDb
-        , toElement
         , toTuple
         , value
         , values
@@ -32,6 +33,11 @@ insert (Element thisId item) (Db dict) =
         |> Db
 
 
+insertMany : List (Element item) -> Db item -> Db item
+insertMany elements db =
+    List.foldr insert db elements
+
+
 remove : Id -> Db item -> Db item
 remove thisId (Db dict) =
     Db (Dict.remove (Id.toString thisId) dict)
@@ -45,7 +51,7 @@ getValue thisId (Db dict) =
 getElement : Id -> Db item -> Maybe (Element item)
 getElement thisId db =
     getValue thisId db
-        |> Maybe.map (toElement thisId)
+        |> Maybe.map (element thisId)
 
 
 values : Db item -> List item
@@ -85,8 +91,8 @@ value (Element _ item) =
     item
 
 
-toElement : Id -> v -> Element v
-toElement =
+element : Id -> v -> Element v
+element =
     Element
 
 

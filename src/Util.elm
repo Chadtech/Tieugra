@@ -1,8 +1,19 @@
 module Util exposing (..)
 
-import Html.Styled as Html exposing (Attribute, Html)
-import Html.Styled.Events exposing (keyCode, on)
+import Html exposing (Attribute, Html)
+import Html.Events exposing (keyCode, on)
 import Json.Decode as Decode exposing (Decoder)
+import Process
+import Task
+
+
+-- TUPLE --
+
+
+def : a -> b -> ( a, b )
+def =
+    Tuple.pair
+
 
 
 -- MAYBE --
@@ -23,8 +34,19 @@ maybeCons maybe list =
 
 
 contains : List a -> a -> Bool
-contains =
-    flip List.member
+contains list member =
+    List.member member list
+
+
+
+-- TASK --
+
+
+delay : Float -> msg -> Cmd msg
+delay time msg =
+    Process.sleep time
+        |> Task.andThen (always <| Task.succeed msg)
+        |> Task.perform identity
 
 
 

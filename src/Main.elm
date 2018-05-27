@@ -1,19 +1,21 @@
-port module Main exposing (..)
+module Main exposing (..)
 
 import Browser
 import Browser.Navigation
 import Data.Db as Db
-import Html.Styled exposing (toUnstyled)
+import Data.Post as Post
+import Data.Taco as Taco
 import Json.Decode exposing (Value)
-import Json.Encode
+import Json.Encode as Encode
 import Model exposing (Model)
 import Msg exposing (Msg(..))
 import Page
 import Page.Home as Home
 import Page.Topic as Topic
+import Ports exposing (JsMsg(..))
 import Return as R
 import Route exposing (Route)
-import Url.Parser exposing (Url)
+import Url exposing (Url)
 import View exposing (view)
 
 
@@ -39,7 +41,7 @@ onNavigation =
 init : Browser.Env Value -> ( Model, Cmd Msg )
 init { url } =
     { page = Page.Blank
-    , threads = Db.empty
+    , taco = Taco.empty
     }
         |> update (onNavigation url)
 
@@ -49,8 +51,8 @@ init { url } =
 
 
 subscriptions : Model -> Sub Msg
-subscriptions _ =
-    Sub.none
+subscriptions model =
+    Ports.fromJs Msg.decode
 
 
 
@@ -59,7 +61,7 @@ subscriptions _ =
 
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
-    case msg of
+    case Debug.log "MSG" msg of
         RouteChanged (Ok route) ->
             handleRoute route model
 
@@ -67,9 +69,35 @@ update msg model =
             model |> R.withNoCmd
 
         HomeMsg subMsg ->
-            model |> R.withNoCmd
+            case model.page of
+                Page.Home subModel ->
+                    subModel
+                        |> Home.update subMsg
+                        |> R.mapCmd HomeMsg
+                        |> R.mapModel
+                            (Model.setPage model Page.Home)
+
+                _ ->
+                    model
+                        |> R.withNoCmd
 
         TopicMsg subMsg ->
+            model |> R.withNoCmd
+
+        ReceivedThread thread ->
+            thread
+                |> Taco.insertThread model.taco
+                |> Model.setTaco model
+                |> R.withCmds
+                    (List.map Post.get (Db.value thread))
+
+        ReceivedPost post ->
+            post
+                |> Taco.insertPost model.taco
+                |> Model.setTaco model
+                |> R.withNoCmd
+
+        MsgDecodeFailed _ ->
             model |> R.withNoCmd
 
 
@@ -89,13 +117,3 @@ handleRoute route model =
                     Page.Topic Topic.init
             }
                 |> R.withNoCmd
-
-
-
--- PORTS --
-
-
-port fromJs : (Json.Encode.Value -> msg) -> Sub msg
-
-
-port toJs : Json.Encode.Value -> Cmd msg
