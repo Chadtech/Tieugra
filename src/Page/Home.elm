@@ -7,11 +7,13 @@ module Page.Home
         , view
         )
 
-import Data.Db as Db
+import Data.Db as Db exposing (Element)
+import Data.Post exposing (Post)
 import Data.Taco as Taco exposing (Taco)
-import Html exposing (Html, button)
+import Html exposing (Html, button, div, p)
 import Html.Attributes as Attrs
 import Html.Events exposing (onClick)
+import List.NonEmpty exposing (NonEmptyList)
 import Ports exposing (JsMsg(..))
 import Return as R
 
@@ -55,7 +57,39 @@ update msg model =
 
 view : Taco -> Model -> List (Html Msg)
 view taco model =
-    [ button
-        [ onClick GetThreadsClicked ]
-        [ Html.text "get threads" ]
+    [ p []
+        [ Html.text "Argue Chan" ]
     ]
+        ++ threadsView taco
+
+
+threadsView : Taco -> List (Html Msg)
+threadsView taco =
+    taco
+        |> Taco.getThreads
+        |> List.map threadView
+
+
+threadView : Element (NonEmptyList (Element (Maybe Post))) -> Html Msg
+threadView thread =
+    div
+        []
+        (postsView (Db.value thread))
+
+
+postsView : NonEmptyList (Element (Maybe Post)) -> List (Html Msg)
+postsView =
+    List.map postView << List.NonEmpty.toList
+
+
+postView : Element (Maybe Post) -> Html Msg
+postView maybePost =
+    case Db.value maybePost of
+        Nothing ->
+            p [] [ Html.text "NO POST" ]
+
+        Just post ->
+            p
+                []
+                [ Html.text post.content
+                ]

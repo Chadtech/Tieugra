@@ -19,34 +19,52 @@ var posts = db.collection("post");
 var threads = db.collection("thread");
 
 
-var app = Elm.Main.fullscreen();
+var app = { elm: null };
+app.elm = Elm.Main.fullscreen();
+
+threads.get().then(function(threadsSnap) {
+    var postIds = [];
+    threadsSnap.forEach(function(thread) {
+        sendThread(thread);
+        postIds = postIds.concat(thread.data().posts);
+    });
+
+    posts.get(postIds).then(function(postsSnap) {
+        postsSnap.forEach(sendPost);
+    });
+});
+
 
 function toElm (type, payload) {
-	app.ports.fromJs.send({
+	app.elm.ports.fromJs.send({
 		type: type,
 		payload: payload
 	});
 }
 
+function sendThread (thread) {
+    toElm("received-thread", {
+        id: thread.id,
+        posts: thread.data().posts
+    });
+}
+
 function getAllThreads() {
 	threads.get().then(function(snap) {
-		snap.forEach(function(thread) {
-			toElm("received-all-threads", { 
-				id: thread.id,
-				posts: thread.data().posts
-			});
-		});
+		snap.forEach(sendThread);
 	});
+}
+
+function sendPost (post) {
+    toElm("received-post", {
+        id: post.id,
+        post: post.data()
+    });
 }
 
 function getPost(payload) {
     posts.get(payload).then(function(snap) {
-        snap.forEach(function(post) {
-            toElm("received-post", {
-                id: post.id,
-                post: post.data()
-            });
-        });
+        snap.forEach(sendPost);
     });
 }
 
@@ -64,4 +82,4 @@ function jsMsgHandler(msg) {
 	action(msg.payload);
 }
 
-app.ports.toJs.subscribe(jsMsgHandler);
+app.elm.ports.toJs.subscribe(jsMsgHandler);

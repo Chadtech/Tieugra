@@ -2,11 +2,13 @@ module Main exposing (..)
 
 import Browser
 import Browser.Navigation
-import Data.Db as Db
+import Data.Db as Db exposing (Element)
+import Data.Id exposing (Id)
 import Data.Post as Post
 import Data.Taco as Taco
 import Json.Decode exposing (Value)
 import Json.Encode as Encode
+import List.NonEmpty exposing (NonEmptyList)
 import Model exposing (Model)
 import Msg exposing (Msg(..))
 import Page
@@ -88,8 +90,7 @@ update msg model =
             thread
                 |> Taco.insertThread model.taco
                 |> Model.setTaco model
-                |> R.withCmds
-                    (List.map Post.get (Db.value thread))
+                |> R.withCmds (getPostsCmd thread)
 
         ReceivedPost post ->
             post
@@ -98,7 +99,16 @@ update msg model =
                 |> R.withNoCmd
 
         MsgDecodeFailed _ ->
-            model |> R.withNoCmd
+            model
+                |> R.withNoCmd
+
+
+getPostsCmd : Element (NonEmptyList Id) -> List (Cmd Msg)
+getPostsCmd postIds =
+    postIds
+        |> Db.value
+        |> List.NonEmpty.toList
+        |> List.map Post.get
 
 
 handleRoute : Route -> Model -> ( Model, Cmd Msg )

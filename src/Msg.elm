@@ -14,6 +14,7 @@ import Json.Decode as Decode
         , Value
         , decodeValue
         )
+import List.NonEmpty exposing (NonEmptyList)
 import Page.Home as Home
 import Page.Topic as Topic
 import Route exposing (Route)
@@ -23,7 +24,7 @@ type Msg
     = RouteChanged (Result String Route)
     | HomeMsg Home.Msg
     | TopicMsg Topic.Msg
-    | ReceivedThread (Element (List Id))
+    | ReceivedThread (Element (NonEmptyList Id))
     | ReceivedPost (Element Post)
     | MsgDecodeFailed Decode.Error
 
@@ -49,7 +50,7 @@ decoder =
 fromType : String -> Decoder Msg
 fromType type_ =
     case type_ of
-        "received-all-threads" ->
+        "received-thread" ->
             Thread.decoder
                 |> Decode.map ReceivedThread
 

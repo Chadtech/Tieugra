@@ -9,6 +9,7 @@ module Data.Db
         , id
         , insert
         , insertMany
+        , mapElement
         , remove
         , toDb
         , toTuple
@@ -43,20 +44,22 @@ remove thisId (Db dict) =
     Db (Dict.remove (Id.toString thisId) dict)
 
 
-getValue : Id -> Db item -> Maybe item
-getValue thisId (Db dict) =
+getValue : Db item -> Id -> Maybe item
+getValue (Db dict) thisId =
     Dict.get (Id.toString thisId) dict
 
 
-getElement : Id -> Db item -> Maybe (Element item)
-getElement thisId db =
-    getValue thisId db
-        |> Maybe.map (element thisId)
+getElement : Db item -> Id -> Element (Maybe item)
+getElement db thisId =
+    getValue db thisId
+        |> element thisId
 
 
-values : Db item -> List item
+values : Db item -> List (Element item)
 values (Db dict) =
-    Dict.values dict
+    Dict.toList dict
+        |> List.map
+            (Tuple.mapFirst Id.fromString >> fromPair)
 
 
 toDb : List (Element item) -> Db item
@@ -94,6 +97,16 @@ value (Element _ item) =
 element : Id -> v -> Element v
 element =
     Element
+
+
+mapElement : (v -> w) -> Element v -> Element w
+mapElement f (Element thisId item) =
+    Element thisId (f item)
+
+
+fromPair : ( Id, v ) -> Element v
+fromPair ( thisId, v ) =
+    element thisId v
 
 
 toTuple : Element v -> ( Id, v )
