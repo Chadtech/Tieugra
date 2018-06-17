@@ -1,7 +1,7 @@
 module View exposing (view)
 
 import Browser
-import Html exposing (Attribute, Html, div)
+import Html.Styled as Html exposing (Attribute, Html, div)
 import Model exposing (Model)
 import Msg exposing (Msg(..))
 import Page
@@ -13,7 +13,10 @@ import Page.Topic as Topic
 view : Model -> Browser.Page Msg
 view model =
     { title = "Argue Chan"
-    , body = viewBody model
+    , body =
+        [ div [] (viewBody model)
+            |> Html.toUnstyled
+        ]
     }
 
 

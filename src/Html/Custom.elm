@@ -1,16 +1,47 @@
 module Html.Custom
     exposing
-        ( input
-        , lightGray
+        ( background0
+        , background1
+        , background2
+        , border1
+        , border1Inset
+        , border2
+        , fontSmoothingNone
+        , input
         , p
+        , pStyle
+        , primary0
+        , primary2
         , red
-        , white0
-        , white1
         )
 
 import Css exposing (..)
 import Html.Styled as Html exposing (Attribute, Html)
 import Html.Styled.Attributes exposing (css)
+
+
+border1 : Style
+border1 =
+    [ border3 (px 1) outset primary1
+    , borderRadius (px 5)
+    ]
+        |> Css.batch
+
+
+border1Inset : Style
+border1Inset =
+    [ border3 (px 1) inset primary1
+    , borderRadius (px 5)
+    ]
+        |> Css.batch
+
+
+border2 : Style
+border2 =
+    [ border3 (px 1) outset primary2
+    , borderRadius (px 5)
+    ]
+        |> Css.batch
 
 
 input : List (Attribute msg) -> List (Html msg) -> Html msg
@@ -21,9 +52,11 @@ input attrs =
 inputCss : Attribute msg
 inputCss =
     [ fontFamilies [ "Arial" ]
-    , color black
+
+    --, color black
     , fontSize (em 2)
-    , backgroundColor white1
+
+    --, backgroundColor white1
     , border3 (px 2) solid lightGray
     , outline none
     , width (px 500)
@@ -33,34 +66,55 @@ inputCss =
 
 p : List (Attribute msg) -> List (Html msg) -> Html msg
 p attrs =
-    Html.p (pCss :: attrs)
+    Html.p (css pStyle :: attrs)
 
 
-pCss : Attribute msg
-pCss =
-    [ fontFamilies [ "Arial" ]
-    , color black
+pStyle : List Style
+pStyle =
+    [ fontFamilies [ "sans-serif" ]
+    , color primary0
+    , margin zero
+    , fontSmoothingNone
     ]
-        |> css
+
+
+fontSmoothingNone : Style
+fontSmoothingNone =
+    property "-webkit-font-smoothing" "none"
 
 
 
 -- COLORS --
 
 
-black : Color
-black =
-    hex "#030907"
+background0 : Color
+background0 =
+    hex "#060003"
 
 
-white0 : Color
-white0 =
-    hex "#fcf7f9"
+background1 : Color
+background1 =
+    hex "#160812"
 
 
-white1 : Color
-white1 =
-    hex "#f9fcfb"
+background2 : Color
+background2 =
+    hex "#241720"
+
+
+primary0 : Color
+primary0 =
+    hex "#d0aca4"
+
+
+primary1 : Color
+primary1 =
+    hex "#c09488"
+
+
+primary2 : Color
+primary2 =
+    hex "#b08074"
 
 
 lightGray : Color
@@ -70,4 +124,4 @@ lightGray =
 
 red : Color
 red =
-    hex "#f21d23"
+    hex "#803030"

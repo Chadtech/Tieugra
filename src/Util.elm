@@ -29,6 +29,19 @@ maybeCons maybe list =
             list
 
 
+maybeValues : List (Maybe a) -> List a
+maybeValues maybes =
+    case maybes of
+        (Just v) :: rest ->
+            v :: maybeValues rest
+
+        Nothing :: rest ->
+            maybeValues rest
+
+        [] ->
+            []
+
+
 
 -- LIST --
 
@@ -36,6 +49,11 @@ maybeCons maybe list =
 contains : List a -> a -> Bool
 contains list member =
     List.member member list
+
+
+appendTo : List a -> List a -> List a
+appendTo a b =
+    List.append b a
 
 
 

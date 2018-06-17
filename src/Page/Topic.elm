@@ -7,8 +7,8 @@ module Page.Topic
         , view
         )
 
-import Html exposing (Html)
-import Return as R
+import Html.Styled exposing (Html)
+import Return2 as R2
 
 
 -- TYPES --
@@ -44,7 +44,7 @@ update msg model =
     case msg of
         None ->
             model
-                |> R.withNoCmd
+                |> R2.withNoCmd
 
 
 

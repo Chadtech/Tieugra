@@ -3,7 +3,7 @@ module Page.Error
         ( view
         )
 
-import Html exposing (Html)
+import Html.Styled as Html exposing (Html)
 
 
 view : List (Html msg)

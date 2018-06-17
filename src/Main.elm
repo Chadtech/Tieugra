@@ -15,7 +15,7 @@ import Page
 import Page.Home as Home
 import Page.Topic as Topic
 import Ports exposing (JsMsg(..))
-import Return as R
+import Return2 as R2
 import Route exposing (Route)
 import Url exposing (Url)
 import View exposing (view)
@@ -68,39 +68,39 @@ update msg model =
             handleRoute route model
 
         RouteChanged (Err url) ->
-            model |> R.withNoCmd
+            model |> R2.withNoCmd
 
         HomeMsg subMsg ->
             case model.page of
                 Page.Home subModel ->
                     subModel
                         |> Home.update subMsg
-                        |> R.mapCmd HomeMsg
-                        |> R.mapModel
+                        |> R2.mapCmd HomeMsg
+                        |> R2.mapModel
                             (Model.setPage model Page.Home)
 
                 _ ->
                     model
-                        |> R.withNoCmd
+                        |> R2.withNoCmd
 
         TopicMsg subMsg ->
-            model |> R.withNoCmd
+            model |> R2.withNoCmd
 
         ReceivedThread thread ->
             thread
                 |> Taco.insertThread model.taco
                 |> Model.setTaco model
-                |> R.withCmds (getPostsCmd thread)
+                |> R2.withCmds (getPostsCmd thread)
 
         ReceivedPost post ->
             post
                 |> Taco.insertPost model.taco
                 |> Model.setTaco model
-                |> R.withNoCmd
+                |> R2.withNoCmd
 
         MsgDecodeFailed _ ->
             model
-                |> R.withNoCmd
+                |> R2.withNoCmd
 
 
 getPostsCmd : Element (NonEmptyList Id) -> List (Cmd Msg)
@@ -119,11 +119,11 @@ handleRoute route model =
                 | page =
                     Page.Home Home.init
             }
-                |> R.withNoCmd
+                |> R2.withNoCmd
 
         Route.Topic id ->
             { model
                 | page =
                     Page.Topic Topic.init
             }
-                |> R.withNoCmd
+                |> R2.withNoCmd
