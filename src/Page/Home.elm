@@ -86,6 +86,12 @@ newThreadView =
             , Attrs.placeholder "name"
             ]
             []
+        , input
+            [ css [ newThreadAuthorStyle ]
+            , Attrs.spellcheck False
+            , Attrs.placeholder "subject"
+            ]
+            []
         , textarea
             [ css [ newThreadContentStyle ]
             , Attrs.spellcheck False
