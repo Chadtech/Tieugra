@@ -6,6 +6,7 @@ import Data.Db as Db exposing (Element)
 import Data.Id exposing (Id)
 import Data.Post as Post
 import Data.Taco as Taco
+import Data.Thread as Thread exposing (Thread)
 import Json.Decode exposing (Value)
 import Json.Encode as Encode
 import List.NonEmpty exposing (NonEmptyList)
@@ -63,7 +64,7 @@ subscriptions model =
 
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
-    case Debug.log "MSG" msg of
+    case msg of
         RouteChanged (Ok route) ->
             handleRoute route model
 
@@ -103,10 +104,11 @@ update msg model =
                 |> R2.withNoCmd
 
 
-getPostsCmd : Element (NonEmptyList Id) -> List (Cmd Msg)
-getPostsCmd postIds =
-    postIds
+getPostsCmd : Element Thread -> List (Cmd Msg)
+getPostsCmd thread =
+    thread
         |> Db.value
+        |> .posts
         |> List.NonEmpty.toList
         |> List.map Post.get
 

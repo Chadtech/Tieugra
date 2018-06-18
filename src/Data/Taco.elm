@@ -10,11 +10,12 @@ module Data.Taco
 import Data.Db as Db exposing (Db, Element)
 import Data.Id exposing (Id)
 import Data.Post exposing (Post)
+import Data.Thread exposing (Thread)
 import List.NonEmpty exposing (NonEmptyList)
 
 
 type alias Taco =
-    { threads : Db (NonEmptyList Id)
+    { threads : Db Thread
     , posts : Db Post
     }
 
@@ -26,7 +27,7 @@ empty =
     }
 
 
-insertThread : Taco -> Element (NonEmptyList Id) -> Taco
+insertThread : Taco -> Element Thread -> Taco
 insertThread taco thread =
     { taco
         | threads =
@@ -50,9 +51,9 @@ getThreads taco =
             (Db.mapElement (getThreadsPosts taco))
 
 
-getThreadsPosts : Taco -> NonEmptyList Id -> NonEmptyList (Element (Maybe Post))
-getThreadsPosts taco =
-    List.NonEmpty.map (getPost taco)
+getThreadsPosts : Taco -> Thread -> NonEmptyList (Element (Maybe Post))
+getThreadsPosts taco thread =
+    List.NonEmpty.map (getPost taco) thread.posts
 
 
 getPosts : Taco -> List Id -> List (Element (Maybe Post))

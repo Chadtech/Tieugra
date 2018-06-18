@@ -45,6 +45,7 @@ function toElm (type, payload) {
 function sendThread (thread) {
     toElm("received-thread", {
         id: thread.id,
+        title: thread.data().title,
         posts: thread.data().posts
     });
 }

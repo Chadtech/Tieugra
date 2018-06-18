@@ -7,7 +7,7 @@ module Msg
 import Data.Db as Db exposing (Element)
 import Data.Id as Id exposing (Id)
 import Data.Post as Post exposing (Post)
-import Data.Thread as Thread
+import Data.Thread as Thread exposing (Thread)
 import Json.Decode as Decode
     exposing
         ( Decoder
@@ -24,7 +24,7 @@ type Msg
     = RouteChanged (Result String Route)
     | HomeMsg Home.Msg
     | TopicMsg Topic.Msg
-    | ReceivedThread (Element (NonEmptyList Id))
+    | ReceivedThread (Element Thread)
     | ReceivedPost (Element Post)
     | MsgDecodeFailed Decode.Error
 
@@ -51,7 +51,7 @@ fromType : String -> Decoder Msg
 fromType type_ =
     case type_ of
         "received-thread" ->
-            Thread.decoder
+            Thread.elementDecoder
                 |> Decode.map ReceivedThread
 
         "received-post" ->
