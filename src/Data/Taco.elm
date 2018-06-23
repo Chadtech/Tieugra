@@ -3,6 +3,7 @@ module Data.Taco
         ( Taco
         , empty
         , getThreads
+        , getThreadsPosts
         , insertPost
         , insertThread
         )
@@ -43,12 +44,10 @@ insertPost taco post =
     }
 
 
-getThreads : Taco -> List (Element (NonEmptyList (Element (Maybe Post))))
+getThreads : Taco -> List (Element Thread)
 getThreads taco =
     taco.threads
         |> Db.values
-        |> List.map
-            (Db.mapElement (getThreadsPosts taco))
 
 
 getThreadsPosts : Taco -> Thread -> NonEmptyList (Element (Maybe Post))

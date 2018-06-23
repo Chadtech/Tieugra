@@ -11,10 +11,12 @@ import Css exposing (..)
 import Data.Db as Db exposing (Element)
 import Data.Post exposing (Post)
 import Data.Taco as Taco exposing (Taco)
+import Data.Thread exposing (Thread)
 import Html.Custom exposing (p)
 import Html.Styled as Html
     exposing
         ( Html
+        , br
         , button
         , div
         , input
@@ -156,19 +158,28 @@ threadsView : Taco -> List (Html Msg)
 threadsView taco =
     taco
         |> Taco.getThreads
-        |> List.map threadView
+        |> List.repeat 5
+        |> List.concat
+        |> List.map (threadView taco)
 
 
-threadView : Element (NonEmptyList (Element (Maybe Post))) -> Html Msg
-threadView thread =
-    thread
-        |> Db.value
+threadView : Taco -> Element Thread -> Html Msg
+threadView taco threadElement =
+    let
+        ( id, thread ) =
+            Db.toTuple threadElement
+    in
+    [ [ p [] [ Html.text thread.title ] ]
+    , thread
+        |> Taco.getThreadsPosts taco
         |> List.NonEmpty.toList
         |> List.map Db.value
         |> Util.maybeValues
         |> List.map postView
         |> List.take 5
-        |> Util.appendTo [ openThreadButton ]
+    , [ openThreadButton ]
+    ]
+        |> List.concat
         |> div [ css [ threadStyle ] ]
 
 
@@ -194,11 +205,23 @@ threadStyle =
 
 postView : Post -> Html Msg
 postView post =
-    div
-        [ css [ postStyle ] ]
-        [ p [] [ Html.text post.author ]
-        , p [] [ Html.text post.content ]
-        ]
+    [ [ p
+            []
+            [ Html.text ("name : " ++ post.author) ]
+      , br [] []
+      ]
+    , post.content
+        |> String.split "  "
+        |> List.map postSectionView
+        |> List.intersperse (br [] [])
+    ]
+        |> List.concat
+        |> div [ css [ postStyle ] ]
+
+
+postSectionView : String -> Html Msg
+postSectionView paragraph =
+    p [] [ Html.text paragraph ]
 
 
 postStyle : Style
@@ -207,7 +230,6 @@ postStyle =
     , padding (px 5)
     , margin (px 5)
     , backgroundColor Html.Custom.background2
-    , flex2 (int 0) (int 1)
     , minHeight (px 100)
     ]
         |> Css.batch
