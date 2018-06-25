@@ -3,7 +3,9 @@ module List.NonEmpty
         ( NonEmptyList
         , decoder
         , head
+        , length
         , map
+        , tail
         , toList
         )
 
@@ -17,6 +19,16 @@ type NonEmptyList a
 head : NonEmptyList a -> a
 head (NonEmptyList first _) =
     first
+
+
+tail : NonEmptyList a -> List a
+tail (NonEmptyList _ rest) =
+    rest
+
+
+length : NonEmptyList a -> Int
+length (NonEmptyList _ rest) =
+    List.length rest + 1
 
 
 map : (a -> b) -> NonEmptyList a -> NonEmptyList b

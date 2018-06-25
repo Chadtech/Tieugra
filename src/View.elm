@@ -7,10 +7,11 @@ import Msg exposing (Msg(..))
 import Page
 import Page.Error as Error
 import Page.Home as Home
+import Page.Password as Password
 import Page.Topic as Topic
 
 
-view : Model -> Browser.Page Msg
+view : Model -> Browser.Document Msg
 view model =
     { title = "Argue Chan"
     , body =
@@ -32,6 +33,11 @@ viewBody model =
             subModel
                 |> Topic.view
                 |> List.map (Html.map TopicMsg)
+
+        Page.Password subModel ->
+            subModel
+                |> Password.view model.taco
+                |> List.map (Html.map PasswordMsg)
 
         Page.Error ->
             Error.view

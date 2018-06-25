@@ -1,131 +1,114 @@
 module Main exposing (..)
 
 import Browser
-import Browser.Navigation
-import Data.Db as Db exposing (Element)
-import Data.Id exposing (Id)
-import Data.Post as Post
+import Browser.Navigation as Navigation
+import Data.Flags as Flags exposing (Flags)
 import Data.Taco as Taco
-import Data.Thread as Thread exposing (Thread)
-import Json.Decode exposing (Value)
-import Json.Encode as Encode
-import List.NonEmpty exposing (NonEmptyList)
+import Html.Styled as Html exposing (Html, div, p)
+import Json.Decode as D exposing (Value)
 import Model exposing (Model)
 import Msg exposing (Msg(..))
 import Page
-import Page.Home as Home
-import Page.Topic as Topic
 import Ports exposing (JsMsg(..))
 import Return2 as R2
 import Route exposing (Route)
+import Update
 import Url exposing (Url)
-import View exposing (view)
+import View
 
 
 -- MAIN --
 
 
-main : Program Value Model Msg
+main : Program Value (Result D.Error Model) Msg
 main =
     { init = init
-    , onNavigation = Just onNavigation
+    , onUrlChange = onUrlChange
+    , onUrlRequest = UrlRequested
     , subscriptions = subscriptions
     , update = update
     , view = view
     }
-        |> Browser.fullscreen
+        |> Browser.application
 
 
-onNavigation : Url -> Msg
-onNavigation =
+onUrlChange : Url -> Msg
+onUrlChange =
     Route.fromUrl >> RouteChanged
 
 
-init : Browser.Env Value -> ( Model, Cmd Msg )
-init { url } =
-    { page = Page.Blank
-    , taco = Taco.empty
-    }
-        |> update (onNavigation url)
+
+-- INIT --
 
 
+init : Value -> Url -> Navigation.Key -> ( Result D.Error Model, Cmd Msg )
+init json url key =
+    case D.decodeValue Flags.decoder json of
+        Ok flags ->
+            { page = Page.Blank
+            , taco = Taco.init key flags
+            }
+                |> Update.update (onUrlChange url)
+                |> Tuple.mapFirst Ok
 
--- SUBSCRIPTIONS --
-
-
-subscriptions : Model -> Sub Msg
-subscriptions model =
-    Ports.fromJs Msg.decode
+        Err err ->
+            Err err
+                |> R2.withNoCmd
 
 
 
 -- UPDATE --
 
 
-update : Msg -> Model -> ( Model, Cmd Msg )
-update msg model =
-    case msg of
-        RouteChanged (Ok route) ->
-            handleRoute route model
+update : Msg -> Result D.Error Model -> ( Result D.Error Model, Cmd Msg )
+update msg result =
+    case result of
+        Ok model ->
+            Update.update msg model
+                |> Tuple.mapFirst Ok
 
-        RouteChanged (Err url) ->
-            model |> R2.withNoCmd
-
-        HomeMsg subMsg ->
-            case model.page of
-                Page.Home subModel ->
-                    subModel
-                        |> Home.update subMsg
-                        |> R2.mapCmd HomeMsg
-                        |> R2.mapModel
-                            (Model.setPage model Page.Home)
-
-                _ ->
-                    model
-                        |> R2.withNoCmd
-
-        TopicMsg subMsg ->
-            model |> R2.withNoCmd
-
-        ReceivedThread thread ->
-            thread
-                |> Taco.insertThread model.taco
-                |> Model.setTaco model
-                |> R2.withCmds (getPostsCmd thread)
-
-        ReceivedPost post ->
-            post
-                |> Taco.insertPost model.taco
-                |> Model.setTaco model
-                |> R2.withNoCmd
-
-        MsgDecodeFailed _ ->
-            model
+        Err err ->
+            Err err
                 |> R2.withNoCmd
 
 
-getPostsCmd : Element Thread -> List (Cmd Msg)
-getPostsCmd thread =
-    thread
-        |> Db.value
-        |> .posts
-        |> List.NonEmpty.toList
-        |> List.map Post.get
+
+-- VIEW --
 
 
-handleRoute : Route -> Model -> ( Model, Cmd Msg )
-handleRoute route model =
-    case route of
-        Route.Home ->
-            { model
-                | page =
-                    Page.Home Home.init
+view : Result D.Error Model -> Browser.Document Msg
+view result =
+    case result of
+        Ok model ->
+            View.view model
+
+        Err err ->
+            { title = "Error"
+            , body =
+                err
+                    |> Debug.log "ERR"
+                    |> D.errorToString
+                    |> (++) "An Error occured! : "
+                    --"doink"
+                    |> Html.text
+                    |> List.singleton
+                    |> p []
+                    |> List.singleton
+                    |> div []
+                    |> Html.toUnstyled
+                    |> List.singleton
             }
-                |> R2.withNoCmd
 
-        Route.Topic id ->
-            { model
-                | page =
-                    Page.Topic Topic.init
-            }
-                |> R2.withNoCmd
+
+
+-- SUBSCRIPTIONS --
+
+
+subscriptions : Result D.Error Model -> Sub Msg
+subscriptions result =
+    case result of
+        Ok model ->
+            Ports.fromJs Msg.decode
+
+        Err err ->
+            Sub.none

@@ -5,22 +5,22 @@ module Data.Post
         , get
         )
 
-import Data.Id exposing (Id)
-import Json.Decode as Decode exposing (Decoder)
+import Id exposing (Id)
+import Json.Decode as D exposing (Decoder)
 import Ports
 
 
 type alias Post =
     { author : String
-    , content : String
+    , content : List String
     }
 
 
 decoder : Decoder Post
 decoder =
-    Decode.map2 Post
-        (Decode.field "author" Decode.string)
-        (Decode.field "content" Decode.string)
+    D.map2 Post
+        (D.field "author" D.string)
+        (D.field "content" (D.list D.string))
 
 
 get : Id -> Cmd msg

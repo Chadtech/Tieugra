@@ -5,9 +5,9 @@ module Model
         , setTaco
         )
 
-import Data.Db as Db exposing (Db)
 import Data.Post exposing (Post)
 import Data.Taco exposing (Taco)
+import Db exposing (Db)
 import Page exposing (Page)
 
 

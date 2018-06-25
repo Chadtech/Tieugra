@@ -6,7 +6,7 @@ module Route
         )
 
 import Browser.Navigation
-import Data.Id as Id exposing (Id)
+import Id exposing (Id)
 import Url exposing (Url)
 import Url.Parser as Url exposing (Parser, s, top)
 

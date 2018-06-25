@@ -7,15 +7,17 @@ module Page.Home
         , view
         )
 
+import Colors
 import Css exposing (..)
-import Data.Db as Db exposing (Element)
 import Data.Post exposing (Post)
 import Data.Taco as Taco exposing (Taco)
 import Data.Thread exposing (Thread)
+import Db
 import Html.Custom exposing (p)
 import Html.Styled as Html
     exposing
-        ( Html
+        ( Attribute
+        , Html
         , br
         , button
         , div
@@ -23,9 +25,11 @@ import Html.Styled as Html
         , textarea
         )
 import Html.Styled.Attributes as Attrs exposing (css)
+import Id exposing (Id)
 import List.NonEmpty exposing (NonEmptyList)
 import Ports exposing (JsMsg(..))
 import Return2 as R2
+import Style
 import Util
 
 
@@ -77,146 +81,169 @@ view taco model =
 newThreadView : Html Msg
 newThreadView =
     div
-        [ css
-            [ threadStyle
-            , height (px 200)
-            ]
+        [ threadStyle
+        , css [ height (px 200) ]
         ]
-        [ input
-            [ css [ newThreadAuthorStyle ]
-            , Attrs.spellcheck False
-            , Attrs.placeholder "name"
-            ]
-            []
-        , input
-            [ css [ newThreadAuthorStyle ]
-            , Attrs.spellcheck False
-            , Attrs.placeholder "subject"
-            ]
-            []
-        , textarea
-            [ css [ newThreadContentStyle ]
-            , Attrs.spellcheck False
-            , Attrs.placeholder "new thread content.."
-            ]
-            []
-        , button
-            [ css [ newThreadButtonStyle ] ]
-            [ Html.text "post new thread" ]
+        [ threadAuthorView
+        , threadSubjectView
+        , newThreadContentView
+        , newThreadButtonView
         ]
 
 
-newThreadButtonStyle : Style
-newThreadButtonStyle =
-    [ Html.Custom.border1
-    , backgroundColor Html.Custom.background2
-    , margin (px 5)
-    , outline none
-    , fontFamilies [ "sans-serif" ]
-    , color Html.Custom.primary0
-    , Html.Custom.fontSmoothingNone
-    , fontSize (px 16)
-    , hover [ color Html.Custom.primary2 ]
-    , active [ Html.Custom.border1Inset ]
-    ]
-        |> Css.batch
+threadAuthorView : Html Msg
+threadAuthorView =
+    input
+        [ newThreadInputStyle
+        , Attrs.spellcheck False
+        , Attrs.placeholder "name"
+        ]
+        []
 
 
-newThreadAuthorStyle : Style
-newThreadAuthorStyle =
-    [ Html.Custom.border1Inset
-    , padding (px 5)
-    , margin (px 5)
-    , backgroundColor Html.Custom.background1
+threadSubjectView : Html Msg
+threadSubjectView =
+    input
+        [ newThreadInputStyle
+        , Attrs.spellcheck False
+        , Attrs.placeholder "subject"
+        ]
+        []
+
+
+newThreadInputStyle : Attribute Msg
+newThreadInputStyle =
+    [ Style.border1Inset
+    , Style.defaultSpacing
+    , backgroundColor Colors.background1
     , flex2 (int 0) (int 1)
     , outline none
-    , fontFamilies [ "sans-serif" ]
-    , color Html.Custom.primary0
-    , Html.Custom.fontSmoothingNone
-    , fontSize (px 16)
+    , color Colors.primary0
+    , Style.font
+    , Style.fontSmoothingNone
     ]
-        |> Css.batch
+        |> css
 
 
-newThreadContentStyle : Style
+newThreadContentView : Html Msg
+newThreadContentView =
+    textarea
+        [ newThreadContentStyle
+        , Attrs.spellcheck False
+        , Attrs.placeholder "new thread content.."
+        ]
+        []
+
+
+newThreadContentStyle : Attribute Msg
 newThreadContentStyle =
-    [ Html.Custom.border1Inset
-    , padding (px 5)
-    , margin (px 5)
-    , backgroundColor Html.Custom.background1
+    [ Style.border1Inset
+    , Style.defaultSpacing
+    , backgroundColor Colors.background1
     , flex2 (int 1) (int 1)
     , outline none
-    , fontFamilies [ "sans-serif" ]
-    , color Html.Custom.primary0
-    , Html.Custom.fontSmoothingNone
-    , fontSize (px 16)
+    , color Colors.primary0
+    , Style.fontSmoothingNone
+    , Style.font
     ]
-        |> Css.batch
+        |> css
+
+
+newThreadButtonView : Html Msg
+newThreadButtonView =
+    button
+        [ css [ Style.button ] ]
+        [ Html.text "post new thread" ]
 
 
 threadsView : Taco -> List (Html Msg)
 threadsView taco =
     taco
         |> Taco.getThreads
-        |> List.repeat 5
-        |> List.concat
         |> List.map (threadView taco)
 
 
-threadView : Taco -> Element Thread -> Html Msg
-threadView taco threadElement =
-    let
-        ( id, thread ) =
-            Db.toTuple threadElement
-    in
+threadView : Taco -> ( Id, Thread ) -> Html Msg
+threadView taco ( id, thread ) =
     [ [ p [] [ Html.text thread.title ] ]
     , thread
         |> Taco.getThreadsPosts taco
-        |> List.NonEmpty.toList
-        |> List.map Db.value
-        |> Util.maybeValues
-        |> List.map postView
-        |> List.take 5
+        |> postsView
     , [ openThreadButton ]
     ]
         |> List.concat
-        |> div [ css [ threadStyle ] ]
+        |> div [ threadStyle ]
+
+
+threadStyle : Attribute Msg
+threadStyle =
+    [ Style.border1
+    , Style.defaultSpacing
+    , backgroundColor Colors.background1
+    , displayFlex
+    , flexDirection column
+    , minHeight (px 100)
+    ]
+        |> css
+
+
+postsView : NonEmptyList ( Id, Maybe Post ) -> List (Html Msg)
+postsView posts =
+    [ [ postView (List.NonEmpty.head posts)
+      , br [] []
+      ]
+    , posts
+        |> List.NonEmpty.tail
+        |> List.reverse
+        |> List.take 2
+        |> List.reverse
+        |> List.map postView
+    ]
+        |> List.concat
 
 
 openThreadButton : Html Msg
 openThreadButton =
     button
-        [ css [ newThreadButtonStyle ] ]
+        [ css [ Style.button ] ]
         [ Html.text "open thread" ]
 
 
-threadStyle : Style
-threadStyle =
-    [ Html.Custom.border1
-    , padding (px 5)
-    , margin (px 5)
-    , backgroundColor Html.Custom.background1
-    , displayFlex
-    , flexDirection column
-    , minHeight (px 100)
-    ]
-        |> Css.batch
-
-
-postView : Post -> Html Msg
+postView : ( Id, Maybe Post ) -> Html Msg
 postView post =
-    [ [ p
-            []
-            [ Html.text ("name : " ++ post.author) ]
-      , br [] []
-      ]
-    , post.content
-        |> String.split "  "
-        |> List.map postSectionView
-        |> List.intersperse (br [] [])
-    ]
-        |> List.concat
-        |> div [ css [ postStyle ] ]
+    div
+        [ css [ postStyle ] ]
+        (postBodyView post)
+
+
+postBodyView : ( Id, Maybe Post ) -> List (Html Msg)
+postBodyView ( id, maybePost ) =
+    case maybePost of
+        Just post ->
+            [ [ p
+                    []
+                    [ Html.text ("name : " ++ post.author) ]
+              , p
+                    []
+                    [ Html.text ("post : " ++ Id.toString id) ]
+              , br [] []
+              ]
+            , post.content
+                |> List.map postSectionView
+                |> List.intersperse (br [] [])
+            ]
+                |> List.concat
+
+        Nothing ->
+            [ "post"
+            , Id.toString id
+            , "not found"
+            ]
+                |> String.join " "
+                |> Html.text
+                |> List.singleton
+                |> p []
+                |> List.singleton
 
 
 postSectionView : String -> Html Msg
@@ -226,10 +253,9 @@ postSectionView paragraph =
 
 postStyle : Style
 postStyle =
-    [ Html.Custom.border2
-    , padding (px 5)
-    , margin (px 5)
-    , backgroundColor Html.Custom.background2
+    [ Style.border2
+    , Style.defaultSpacing
+    , backgroundColor Colors.background2
     , minHeight (px 100)
     ]
         |> Css.batch

@@ -4,10 +4,11 @@ module Msg
         , decode
         )
 
-import Data.Db as Db exposing (Element)
-import Data.Id as Id exposing (Id)
+import Browser exposing (UrlRequest)
 import Data.Post as Post exposing (Post)
 import Data.Thread as Thread exposing (Thread)
+import Db
+import Id exposing (Id)
 import Json.Decode as Decode
     exposing
         ( Decoder
@@ -16,16 +17,19 @@ import Json.Decode as Decode
         )
 import List.NonEmpty exposing (NonEmptyList)
 import Page.Home as Home
+import Page.Password as Password
 import Page.Topic as Topic
 import Route exposing (Route)
 
 
 type Msg
     = RouteChanged (Result String Route)
+    | UrlRequested UrlRequest
     | HomeMsg Home.Msg
     | TopicMsg Topic.Msg
-    | ReceivedThread (Element Thread)
-    | ReceivedPost (Element Post)
+    | PasswordMsg Password.Msg
+    | ReceivedThread Id Thread
+    | ReceivedPost Id Post
     | MsgDecodeFailed Decode.Error
 
 
@@ -51,14 +55,14 @@ fromType : String -> Decoder Msg
 fromType type_ =
     case type_ of
         "received-thread" ->
-            Thread.elementDecoder
-                |> Decode.map ReceivedThread
+            Decode.map2 ReceivedThread
+                (Decode.field "id" Id.decoder)
+                Thread.decoder
 
         "received-post" ->
-            Decode.map2 Db.element
+            Decode.map2 ReceivedPost
                 (Decode.field "id" Id.decoder)
                 (Decode.field "post" Post.decoder)
-                |> Decode.map ReceivedPost
 
         _ ->
             Decode.fail

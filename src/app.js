@@ -1,8 +1,10 @@
 var firebase = require("firebase/app");
 require("firebase/database");
 require("firebase/firestore");
+var apiKey = localStorage.getItem("firebase-apikey");
 var config = {
-    apiKey: "AIzaSyBgI3dyFZk3VXcX514LmZ-3maife9GseHo",
+    // apiKey: "AIzaSyBgI3dyFZk3VXcX514LmZ-3maife9GseHo",
+    apiKey: apiKey,
     authDomain: "argue-chan.firebaseapp.com",
     databaseURL: "https://argue-chan.firebaseio.com",
     projectId: "argue-chan",
@@ -20,7 +22,12 @@ var threads = db.collection("thread");
 
 
 var app = { elm: null };
-app.elm = Elm.Main.fullscreen();
+
+app.elm = Elm.Main.init({
+    flags: {
+        apiKey: Boolean(apiKey),
+    }
+});
 
 threads.get().then(function(threadsSnap) {
     var postIds = [];
@@ -69,9 +76,15 @@ function getPost(payload) {
     });
 }
 
+function submitPassword(payload) {
+    localStorage.setItem("firebase-apikey", payload);
+    window.location.reload();
+}
+
 var actions = {
 	getAllThreads,
-    getPost
+    getPost,
+    submitPassword,
 };
 
 function jsMsgHandler(msg) {

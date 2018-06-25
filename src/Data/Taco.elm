@@ -1,65 +1,70 @@
 module Data.Taco
     exposing
         ( Taco
-        , empty
         , getThreads
         , getThreadsPosts
+        , init
         , insertPost
         , insertThread
         )
 
-import Data.Db as Db exposing (Db, Element)
-import Data.Id exposing (Id)
+import Browser.Navigation as Navigation
+import Data.Flags exposing (Flags)
 import Data.Post exposing (Post)
 import Data.Thread exposing (Thread)
+import Db exposing (Db)
+import Id exposing (Id)
 import List.NonEmpty exposing (NonEmptyList)
 
 
 type alias Taco =
     { threads : Db Thread
     , posts : Db Post
+    , navigationKey : Navigation.Key
+    , apiKeySet : Bool
     }
 
 
-empty : Taco
-empty =
+init : Navigation.Key -> Flags -> Taco
+init key flags =
     { threads = Db.empty
     , posts = Db.empty
+    , navigationKey = key
+    , apiKeySet = flags.apiKeySet
     }
 
 
-insertThread : Taco -> Element Thread -> Taco
-insertThread taco thread =
+insertThread : Id -> Thread -> Taco -> Taco
+insertThread id thread taco =
     { taco
         | threads =
-            Db.insert thread taco.threads
+            Db.insert id thread taco.threads
     }
 
 
-insertPost : Taco -> Element Post -> Taco
-insertPost taco post =
+insertPost : Id -> Post -> Taco -> Taco
+insertPost id post taco =
     { taco
         | posts =
-            Db.insert post taco.posts
+            Db.insert id post taco.posts
     }
 
 
-getThreads : Taco -> List (Element Thread)
+getThreads : Taco -> List ( Id, Thread )
 getThreads taco =
-    taco.threads
-        |> Db.values
+    Db.toList taco.threads
 
 
-getThreadsPosts : Taco -> Thread -> NonEmptyList (Element (Maybe Post))
+getThreadsPosts : Taco -> Thread -> NonEmptyList ( Id, Maybe Post )
 getThreadsPosts taco thread =
     List.NonEmpty.map (getPost taco) thread.posts
 
 
-getPosts : Taco -> List Id -> List (Element (Maybe Post))
+getPosts : Taco -> List Id -> List ( Id, Maybe Post )
 getPosts taco =
     List.map (getPost taco)
 
 
-getPost : Taco -> Id -> Element (Maybe Post)
+getPost : Taco -> Id -> ( Id, Maybe Post )
 getPost taco id =
-    Db.getElement taco.posts id
+    Db.get taco.posts id

@@ -6,27 +6,28 @@ port module Ports
         , toJs
         )
 
-import Data.Id as Id exposing (Id)
-import Json.Encode as Encode exposing (Value)
+import Id exposing (Id)
+import Json.Encode as E exposing (Value)
 import Util exposing (def)
 
 
 type JsMsg
     = GetAllThreads
     | GetPost Id
+    | SubmitPassword String
 
 
 noPayload : String -> Cmd msg
 noPayload =
-    withPayload Encode.null
+    withPayload E.null
 
 
 withPayload : Value -> String -> Cmd msg
 withPayload payload type_ =
-    [ def "type" <| Encode.string type_
+    [ def "type" <| E.string type_
     , def "payload" <| payload
     ]
-        |> Encode.object
+        |> E.object
         |> toJs
 
 
@@ -40,6 +41,10 @@ send msg =
         GetPost id ->
             "getPost"
                 |> withPayload (Id.encode id)
+
+        SubmitPassword str ->
+            "submitPassword"
+                |> withPayload (E.string str)
 
 
 port fromJs : (Value -> msg) -> Sub msg
