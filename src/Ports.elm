@@ -12,9 +12,16 @@ import Util exposing (def)
 
 
 type JsMsg
-    = GetAllThreads
-    | GetPost Id
+    = GetPost Id
     | SubmitPassword String
+    | SubmitNewThread NewThreadSubmission
+
+
+type alias NewThreadSubmission =
+    { author : String
+    , subject : String
+    , content : List String
+    }
 
 
 noPayload : String -> Cmd msg
@@ -31,13 +38,14 @@ withPayload payload type_ =
         |> toJs
 
 
+withType : String -> Value -> Cmd msg
+withType type_ payload =
+    withPayload payload type_
+
+
 send : JsMsg -> Cmd msg
 send msg =
     case msg of
-        GetAllThreads ->
-            "getAllThreads"
-                |> noPayload
-
         GetPost id ->
             "getPost"
                 |> withPayload (Id.encode id)
@@ -45,6 +53,16 @@ send msg =
         SubmitPassword str ->
             "submitPassword"
                 |> withPayload (E.string str)
+
+        SubmitNewThread submission ->
+            [ def "author" (E.string submission.author)
+            , def "subject" (E.string submission.subject)
+            , submission.content
+                |> E.list E.string
+                |> def "content"
+            ]
+                |> E.object
+                |> withType "submitNewThread"
 
 
 port fromJs : (Value -> msg) -> Sub msg

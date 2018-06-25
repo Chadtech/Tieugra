@@ -25,9 +25,10 @@ import Html.Styled as Html
         , textarea
         )
 import Html.Styled.Attributes as Attrs exposing (css)
+import Html.Styled.Events exposing (onClick, onInput)
 import Id exposing (Id)
 import List.NonEmpty exposing (NonEmptyList)
-import Ports exposing (JsMsg(..))
+import Ports
 import Return2 as R2
 import Style
 import Util
@@ -37,11 +38,21 @@ import Util
 
 
 type alias Model =
-    { newThreadField : String }
+    { newThreadAuthor : String
+    , newThreadSubject : String
+    , newThreadContent : String
+    }
 
 
 type Msg
-    = GetThreadsClicked
+    = FieldUpdated Field String
+    | PostNewThreadClicked
+
+
+type Field
+    = Author
+    | Subject
+    | Content
 
 
 
@@ -50,7 +61,10 @@ type Msg
 
 init : Model
 init =
-    { newThreadField = "" }
+    { newThreadAuthor = ""
+    , newThreadSubject = ""
+    , newThreadContent = ""
+    }
 
 
 
@@ -60,10 +74,33 @@ init =
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
-        GetThreadsClicked ->
-            model
-                |> R2.withCmd
-                    (Ports.send GetAllThreads)
+        FieldUpdated field str ->
+            handleFieldUpdate field str model
+                |> R2.withNoCmd
+
+        PostNewThreadClicked ->
+            { author = model.newThreadAuthor
+            , subject = model.newThreadSubject
+            , content =
+                model.newThreadContent
+                    |> String.split "\n"
+            }
+                |> Ports.SubmitNewThread
+                |> Ports.send
+                |> R2.withModel model
+
+
+handleFieldUpdate : Field -> String -> Model -> Model
+handleFieldUpdate field str model =
+    case field of
+        Author ->
+            { model | newThreadAuthor = str }
+
+        Subject ->
+            { model | newThreadSubject = str }
+
+        Content ->
+            { model | newThreadContent = str }
 
 
 
@@ -97,6 +134,7 @@ threadAuthorView =
         [ newThreadInputStyle
         , Attrs.spellcheck False
         , Attrs.placeholder "name"
+        , onInput (FieldUpdated Author)
         ]
         []
 
@@ -107,6 +145,7 @@ threadSubjectView =
         [ newThreadInputStyle
         , Attrs.spellcheck False
         , Attrs.placeholder "subject"
+        , onInput (FieldUpdated Subject)
         ]
         []
 
@@ -131,6 +170,7 @@ newThreadContentView =
         [ newThreadContentStyle
         , Attrs.spellcheck False
         , Attrs.placeholder "new thread content.."
+        , onInput (FieldUpdated Content)
         ]
         []
 
@@ -152,7 +192,9 @@ newThreadContentStyle =
 newThreadButtonView : Html Msg
 newThreadButtonView =
     button
-        [ css [ Style.button ] ]
+        [ css [ Style.button ]
+        , onClick PostNewThreadClicked
+        ]
         [ Html.text "post new thread" ]
 
 
