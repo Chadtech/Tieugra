@@ -13,6 +13,7 @@ import Util exposing (def)
 
 type JsMsg
     = GetPost Id
+    | GetAllThreads
     | SubmitPassword String
     | SubmitNewThread NewThreadSubmission
 
@@ -21,6 +22,8 @@ type alias NewThreadSubmission =
     { author : String
     , subject : String
     , content : List String
+    , postId : Id
+    , threadId : Id
     }
 
 
@@ -50,6 +53,10 @@ send msg =
             "getPost"
                 |> withPayload (Id.encode id)
 
+        GetAllThreads ->
+            "getAllThreads"
+                |> noPayload
+
         SubmitPassword str ->
             "submitPassword"
                 |> withPayload (E.string str)
@@ -57,6 +64,8 @@ send msg =
         SubmitNewThread submission ->
             [ def "author" (E.string submission.author)
             , def "subject" (E.string submission.subject)
+            , def "postId" (Id.encode submission.postId)
+            , def "threadId" (Id.encode submission.threadId)
             , submission.content
                 |> E.list E.string
                 |> def "content"

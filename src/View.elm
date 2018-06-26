@@ -31,7 +31,7 @@ viewBody model =
 
         Page.Topic subModel ->
             subModel
-                |> Topic.view
+                |> Topic.view model.taco
                 |> List.map (Html.map TopicMsg)
 
         Page.Password subModel ->

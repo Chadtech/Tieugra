@@ -6,6 +6,7 @@ module Data.Taco
         , init
         , insertPost
         , insertThread
+        , setSeed
         )
 
 import Browser.Navigation as Navigation
@@ -15,6 +16,7 @@ import Data.Thread exposing (Thread)
 import Db exposing (Db)
 import Id exposing (Id)
 import List.NonEmpty exposing (NonEmptyList)
+import Random exposing (Seed)
 
 
 type alias Taco =
@@ -22,6 +24,7 @@ type alias Taco =
     , posts : Db Post
     , navigationKey : Navigation.Key
     , apiKeySet : Bool
+    , seed : Seed
     }
 
 
@@ -31,7 +34,13 @@ init key flags =
     , posts = Db.empty
     , navigationKey = key
     , apiKeySet = flags.apiKeySet
+    , seed = flags.seed
     }
+
+
+setSeed : Taco -> Seed -> Taco
+setSeed taco seed =
+    { taco | seed = seed }
 
 
 insertThread : Id -> Thread -> Taco -> Taco

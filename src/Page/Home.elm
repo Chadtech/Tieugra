@@ -2,6 +2,7 @@ module Page.Home
     exposing
         ( Model
         , Msg
+        , Reply(..)
         , init
         , update
         , view
@@ -14,6 +15,7 @@ import Data.Taco as Taco exposing (Taco)
 import Data.Thread exposing (Thread)
 import Db
 import Html.Custom exposing (p)
+import Html.Post
 import Html.Styled as Html
     exposing
         ( Attribute
@@ -29,7 +31,9 @@ import Html.Styled.Events exposing (onClick, onInput)
 import Id exposing (Id)
 import List.NonEmpty exposing (NonEmptyList)
 import Ports
+import Random exposing (Seed)
 import Return2 as R2
+import Return3 as R3 exposing (Return)
 import Style
 import Util
 
@@ -47,6 +51,12 @@ type alias Model =
 type Msg
     = FieldUpdated Field String
     | PostNewThreadClicked
+    | OpenThreadClicked Id
+
+
+type Reply
+    = NewSeed Seed
+    | OpenThread Id
 
 
 type Field
@@ -71,23 +81,37 @@ init =
 -- UPDATE --
 
 
-update : Msg -> Model -> ( Model, Cmd Msg )
-update msg model =
+update : Taco -> Msg -> Model -> Return Model Msg Reply
+update taco msg model =
     case msg of
         FieldUpdated field str ->
             handleFieldUpdate field str model
-                |> R2.withNoCmd
+                |> R3.withNothing
 
         PostNewThreadClicked ->
+            let
+                ( ( threadId, postId ), newSeed ) =
+                    Random.step
+                        (Random.pair Id.generator Id.generator)
+                        taco.seed
+            in
             { author = model.newThreadAuthor
             , subject = model.newThreadSubject
             , content =
                 model.newThreadContent
                     |> String.split "\n"
+            , postId = postId
+            , threadId = threadId
             }
                 |> Ports.SubmitNewThread
                 |> Ports.send
                 |> R2.withModel model
+                |> R3.withReply (NewSeed newSeed)
+
+        OpenThreadClicked id ->
+            model
+                |> R2.withNoCmd
+                |> R3.withReply (OpenThread id)
 
 
 handleFieldUpdate : Field -> String -> Model -> Model
@@ -118,8 +142,10 @@ view taco model =
 newThreadView : Html Msg
 newThreadView =
     div
-        [ threadStyle
-        , css [ height (px 200) ]
+        [ css
+            [ height (px 200)
+            , Style.thread
+            ]
         ]
         [ threadAuthorView
         , threadSubjectView
@@ -211,27 +237,15 @@ threadView taco ( id, thread ) =
     , thread
         |> Taco.getThreadsPosts taco
         |> postsView
-    , [ openThreadButton ]
+    , [ openThreadButton id ]
     ]
         |> List.concat
-        |> div [ threadStyle ]
-
-
-threadStyle : Attribute Msg
-threadStyle =
-    [ Style.border1
-    , Style.defaultSpacing
-    , backgroundColor Colors.background1
-    , displayFlex
-    , flexDirection column
-    , minHeight (px 100)
-    ]
-        |> css
+        |> div [ css [ Style.thread ] ]
 
 
 postsView : NonEmptyList ( Id, Maybe Post ) -> List (Html Msg)
 postsView posts =
-    [ [ postView (List.NonEmpty.head posts)
+    [ [ Html.Post.view (List.NonEmpty.head posts)
       , br [] []
       ]
     , posts
@@ -239,65 +253,15 @@ postsView posts =
         |> List.reverse
         |> List.take 2
         |> List.reverse
-        |> List.map postView
+        |> List.map Html.Post.view
     ]
         |> List.concat
 
 
-openThreadButton : Html Msg
-openThreadButton =
+openThreadButton : Id -> Html Msg
+openThreadButton id =
     button
-        [ css [ Style.button ] ]
+        [ css [ Style.button ]
+        , onClick (OpenThreadClicked id)
+        ]
         [ Html.text "open thread" ]
-
-
-postView : ( Id, Maybe Post ) -> Html Msg
-postView post =
-    div
-        [ css [ postStyle ] ]
-        (postBodyView post)
-
-
-postBodyView : ( Id, Maybe Post ) -> List (Html Msg)
-postBodyView ( id, maybePost ) =
-    case maybePost of
-        Just post ->
-            [ [ p
-                    []
-                    [ Html.text ("name : " ++ post.author) ]
-              , p
-                    []
-                    [ Html.text ("post : " ++ Id.toString id) ]
-              , br [] []
-              ]
-            , post.content
-                |> List.map postSectionView
-                |> List.intersperse (br [] [])
-            ]
-                |> List.concat
-
-        Nothing ->
-            [ "post"
-            , Id.toString id
-            , "not found"
-            ]
-                |> String.join " "
-                |> Html.text
-                |> List.singleton
-                |> p []
-                |> List.singleton
-
-
-postSectionView : String -> Html Msg
-postSectionView paragraph =
-    p [] [ Html.text paragraph ]
-
-
-postStyle : Style
-postStyle =
-    [ Style.border2
-    , Style.defaultSpacing
-    , backgroundColor Colors.background2
-    , minHeight (px 100)
-    ]
-        |> Css.batch

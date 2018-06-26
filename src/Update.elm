@@ -11,6 +11,7 @@ import Page.Home as Home
 import Page.Password as Password
 import Page.Topic as Topic
 import Return2 as R2
+import Return3 as R3
 import Route exposing (Route)
 
 
@@ -35,10 +36,9 @@ update msg model =
             case model.page of
                 Page.Home subModel ->
                     subModel
-                        |> Home.update subMsg
-                        |> R2.mapCmd HomeMsg
-                        |> R2.mapModel
-                            (Model.setPage model Page.Home)
+                        |> Home.update model.taco subMsg
+                        |> R3.mapCmd HomeMsg
+                        |> R3.incorp handleHomeReturn model
 
                 _ ->
                     model
@@ -77,6 +77,27 @@ update msg model =
                 |> R2.withNoCmd
 
 
+handleHomeReturn : Home.Model -> Maybe Home.Reply -> Model -> ( Model, Cmd Msg )
+handleHomeReturn homeModel maybeReply model =
+    case maybeReply of
+        Nothing ->
+            { model | page = Page.Home homeModel }
+                |> R2.withNoCmd
+
+        Just (Home.NewSeed seed) ->
+            seed
+                |> Taco.setSeed model.taco
+                |> Model.setTaco
+                    { model | page = Page.Home homeModel }
+                |> R2.withNoCmd
+
+        Just (Home.OpenThread id) ->
+            { model
+                | page = Page.Topic (Topic.init id)
+            }
+                |> R2.withNoCmd
+
+
 getPostsCmd : Thread -> List (Cmd Msg)
 getPostsCmd { posts } =
     posts
@@ -97,7 +118,7 @@ handleRoute route model =
         Route.Topic id ->
             { model
                 | page =
-                    Page.Topic Topic.init
+                    Page.Topic (Topic.init id)
             }
                 |> maybeRedirectToPassword
 

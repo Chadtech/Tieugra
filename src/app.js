@@ -26,6 +26,7 @@ var app = { elm: null };
 app.elm = Elm.Main.init({
     flags: {
         apiKey: Boolean(apiKey),
+        seed: Math.floor(Math.random() * Number.MAX_SAFE_INTEGER) 
     }
 });
 
@@ -81,10 +82,40 @@ function submitPassword(payload) {
     window.location.reload();
 }
 
+// // Add a new document in collection "cities"
+// db.collection("cities").doc("LA").set({
+//     name: "Los Angeles",
+//     state: "CA",
+//     country: "USA"
+// })
+// .then(function() {
+//     console.log("Document successfully written!");
+// })
+// .catch(function(error) {
+//     console.error("Error writing document: ", error);
+// });
+
+
+function submitNewThread(payload) {
+    posts.doc(payload.postId).set({
+        author: payload.author,
+        content: payload.content
+    }).then(function(){
+        threads.doc(payload.threadId).set({
+            title: payload.subject,
+            posts: [ payload.postId ]
+        }).then(function(){
+            console.log('thread r')
+        })
+        console.log("Response", r);
+    });
+}
+
 var actions = {
 	getAllThreads,
     getPost,
     submitPassword,
+    submitNewThread,
 };
 
 function jsMsgHandler(msg) {

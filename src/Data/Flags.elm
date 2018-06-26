@@ -5,14 +5,17 @@ module Data.Flags
         )
 
 import Json.Decode as D exposing (Decoder)
+import Random exposing (Seed)
 
 
 type alias Flags =
-    { apiKeySet : Bool }
+    { apiKeySet : Bool
+    , seed : Seed
+    }
 
 
 decoder : Decoder Flags
 decoder =
-    D.bool
-        |> D.field "apiKey"
-        |> D.map Flags
+    D.map2 Flags
+        (D.field "apiKey" D.bool)
+        (D.field "seed" (D.map Random.initialSeed D.int))

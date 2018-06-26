@@ -72,3 +72,15 @@ button =
 fontSmoothingNone : Style
 fontSmoothingNone =
     property "-webkit-font-smoothing" "none"
+
+
+thread : Style
+thread =
+    [ border1
+    , defaultSpacing
+    , backgroundColor Colors.background1
+    , displayFlex
+    , flexDirection column
+    , minHeight (px 100)
+    ]
+        |> Css.batch

@@ -7,7 +7,9 @@ module Page.Topic
         , view
         )
 
+import Data.Taco exposing (Taco)
 import Html.Styled exposing (Html)
+import Id exposing (Id)
 import Return2 as R2
 
 
@@ -15,7 +17,7 @@ import Return2 as R2
 
 
 type alias Model =
-    ()
+    { threadId : Id }
 
 
 type Msg
@@ -30,9 +32,9 @@ type Reply
 -- INIT --
 
 
-init : Model
-init =
-    ()
+init : Id -> Model
+init id =
+    { threadId = id }
 
 
 
@@ -51,6 +53,6 @@ update msg model =
 -- VIEW --
 
 
-view : Model -> List (Html Msg)
-view model =
+view : Taco -> Model -> List (Html Msg)
+view taco model =
     []
