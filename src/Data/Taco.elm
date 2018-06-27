@@ -1,6 +1,8 @@
 module Data.Taco
     exposing
         ( Taco
+        , getPosts
+        , getThread
         , getThreads
         , getThreadsPosts
         , init
@@ -57,6 +59,11 @@ insertPost id post taco =
         | posts =
             Db.insert id post taco.posts
     }
+
+
+getThread : Taco -> Id -> ( Id, Maybe Thread )
+getThread taco id =
+    Db.get taco.threads id
 
 
 getThreads : Taco -> List ( Id, Thread )
