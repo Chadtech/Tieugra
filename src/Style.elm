@@ -69,6 +69,34 @@ button =
         |> Css.batch
 
 
+input : Style
+input =
+    [ border1Inset
+    , defaultSpacing
+    , backgroundColor Colors.background1
+    , flex2 (int 0) (int 1)
+    , outline none
+    , color Colors.primary0
+    , font
+    , fontSmoothingNone
+    ]
+        |> Css.batch
+
+
+textarea : Style
+textarea =
+    [ border1Inset
+    , defaultSpacing
+    , backgroundColor Colors.background1
+    , flex2 (int 1) (int 1)
+    , outline none
+    , color Colors.primary0
+    , fontSmoothingNone
+    , font
+    ]
+        |> Css.batch
+
+
 fontSmoothingNone : Style
 fontSmoothingNone =
     property "-webkit-font-smoothing" "none"

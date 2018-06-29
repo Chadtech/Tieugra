@@ -7,14 +7,28 @@ module Page.Topic
         , view
         )
 
+import Css exposing (..)
 import Data.Taco as Taco exposing (Taco)
 import Data.Thread exposing (Thread)
+import Html.Custom
 import Html.Post
-import Html.Styled exposing (Html, div)
-import Html.Styled.Attributes exposing (css)
+import Html.Styled as Html
+    exposing
+        ( Attribute
+        , Html
+        , br
+        , button
+        , div
+        , input
+        , textarea
+        )
+import Html.Styled.Attributes as Attrs exposing (css)
+import Html.Styled.Events exposing (onClick, onInput)
 import Id exposing (Id)
 import List.NonEmpty
+import Random
 import Return2 as R2
+import Return3 as R3 exposing (Return)
 import Style
 
 
@@ -22,15 +36,24 @@ import Style
 
 
 type alias Model =
-    { threadId : Id }
+    { threadId : Id
+    , newPostContent : String
+    , newPostAuthor : String
+    }
 
 
 type Msg
-    = None
+    = FieldUpdated Field String
+    | PostNewPostClicked
+
+
+type Field
+    = Author
+    | Content
 
 
 type Reply
-    = TopicUpdated
+    = NewSeed
 
 
 
@@ -39,19 +62,49 @@ type Reply
 
 init : Id -> Model
 init id =
-    { threadId = id }
+    { threadId = id
+    , newPostContent = ""
+    , newPostAuthor = ""
+    }
 
 
 
 -- UPDATE --
 
 
-update : Msg -> Model -> ( Model, Cmd Msg )
-update msg model =
+update : Taco -> Msg -> Model -> Return Model Msg Reply
+update taco msg model =
     case msg of
-        None ->
-            model
-                |> R2.withNoCmd
+        FieldUpdated field str ->
+            handleFieldUpdate field str model
+                |> R3.withNothing
+
+        PostNewPostClicked ->
+            if String.isEmpty model.newPostContent then
+                model
+                    |> R3.withNothing
+            else
+                submitPost taco model
+
+
+submitPost : Taco -> Model -> Return Model Msg Reply
+submitPost taco model =
+    let
+        ( threadId, newSeed ) =
+            Random.step Id.generator taco.seed
+    in
+    model
+        |> R3.withNothing
+
+
+handleFieldUpdate : Field -> String -> Model -> Model
+handleFieldUpdate field str model =
+    case field of
+        Author ->
+            { model | newPostAuthor = str }
+
+        Content ->
+            { model | newPostContent = str }
 
 
 
@@ -60,6 +113,59 @@ update msg model =
 
 view : Taco -> Model -> List (Html Msg)
 view taco model =
+    [ Html.Custom.argueChanTitle
+    , newPostView
+    ]
+        ++ postsView taco model
+
+
+newPostView : Html Msg
+newPostView =
+    div
+        [ css
+            [ height (px 200)
+            , Style.thread
+            ]
+        ]
+        [ postAuthorView
+        , newPostContentView
+        , newPostButtonView
+        ]
+
+
+postAuthorView : Html Msg
+postAuthorView =
+    input
+        [ css [ Style.input ]
+        , Attrs.spellcheck False
+        , Attrs.placeholder "name"
+        , onInput (FieldUpdated Author)
+        ]
+        []
+
+
+newPostContentView : Html Msg
+newPostContentView =
+    textarea
+        [ css [ Style.textarea ]
+        , Attrs.spellcheck False
+        , Attrs.placeholder "new post content.."
+        , onInput (FieldUpdated Content)
+        ]
+        []
+
+
+newPostButtonView : Html Msg
+newPostButtonView =
+    button
+        [ css [ Style.button ]
+        , onClick PostNewPostClicked
+        ]
+        [ Html.text "post new thread" ]
+
+
+postsView : Taco -> Model -> List (Html Msg)
+postsView taco model =
     model.threadId
         |> Taco.getThread taco
         |> maybeThreadView taco

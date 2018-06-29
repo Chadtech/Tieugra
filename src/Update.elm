@@ -21,6 +21,9 @@ update msg model =
         RouteChanged (Ok route) ->
             handleRoute route model
 
+        RouteChanged (Err url) ->
+            model |> R2.withNoCmd
+
         UrlRequested request ->
             let
                 _ =
@@ -28,9 +31,6 @@ update msg model =
             in
             model
                 |> R2.withNoCmd
-
-        RouteChanged (Err url) ->
-            model |> R2.withNoCmd
 
         HomeMsg subMsg ->
             case model.page of
@@ -89,12 +89,6 @@ handleHomeReturn homeModel maybeReply model =
                 |> Taco.setSeed model.taco
                 |> Model.setTaco
                     { model | page = Page.Home homeModel }
-                |> R2.withNoCmd
-
-        Just (Home.OpenThread id) ->
-            { model
-                | page = Page.Topic (Topic.init id)
-            }
                 |> R2.withNoCmd
 
 

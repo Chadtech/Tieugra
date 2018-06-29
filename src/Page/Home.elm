@@ -8,6 +8,7 @@ module Page.Home
         , view
         )
 
+import Browser.Navigation as Navigation
 import Colors
 import Css exposing (..)
 import Data.Post exposing (Post)
@@ -56,7 +57,6 @@ type Msg
 
 type Reply
     = NewSeed Seed
-    | OpenThread Id
 
 
 type Field
@@ -89,29 +89,43 @@ update taco msg model =
                 |> R3.withNothing
 
         PostNewThreadClicked ->
-            let
-                ( ( threadId, postId ), newSeed ) =
-                    Random.step
-                        (Random.pair Id.generator Id.generator)
-                        taco.seed
-            in
-            { author = model.newThreadAuthor
-            , subject = model.newThreadSubject
-            , content =
-                model.newThreadContent
-                    |> String.split "\n"
-            , postId = postId
-            , threadId = threadId
-            }
-                |> Ports.SubmitNewThread
-                |> Ports.send
-                |> R2.withModel model
-                |> R3.withReply (NewSeed newSeed)
+            if String.isEmpty model.newThreadContent then
+                model
+                    |> R3.withNothing
+            else
+                submitThread taco model
 
         OpenThreadClicked id ->
             model
-                |> R2.withNoCmd
-                |> R3.withReply (OpenThread id)
+                |> R2.withCmd (goToThread taco id)
+                |> R3.withNoReply
+
+
+submitThread : Taco -> Model -> Return Model Msg Reply
+submitThread taco model =
+    let
+        ( ( threadId, postId ), newSeed ) =
+            Random.step
+                (Random.pair Id.generator Id.generator)
+                taco.seed
+    in
+    { author = model.newThreadAuthor
+    , subject = model.newThreadSubject
+    , content =
+        model.newThreadContent
+            |> String.split "\n"
+    , postId = postId
+    , threadId = threadId
+    }
+        |> Ports.SubmitNewThread
+        |> Ports.send
+        |> R2.withModel model
+        |> R3.withReply (NewSeed newSeed)
+
+
+goToThread : Taco -> Id -> Cmd Msg
+goToThread { navigationKey } id =
+    Navigation.pushUrl navigationKey (Id.toString id)
 
 
 handleFieldUpdate : Field -> String -> Model -> Model
@@ -133,7 +147,7 @@ handleFieldUpdate field str model =
 
 view : Taco -> Model -> List (Html Msg)
 view taco model =
-    [ p [] [ Html.text "Argue Chan" ]
+    [ Html.Custom.argueChanTitle
     , newThreadView
     ]
         ++ threadsView taco
@@ -157,7 +171,7 @@ newThreadView =
 threadAuthorView : Html Msg
 threadAuthorView =
     input
-        [ newThreadInputStyle
+        [ css [ Style.input ]
         , Attrs.spellcheck False
         , Attrs.placeholder "name"
         , onInput (FieldUpdated Author)
@@ -168,7 +182,7 @@ threadAuthorView =
 threadSubjectView : Html Msg
 threadSubjectView =
     input
-        [ newThreadInputStyle
+        [ css [ Style.input ]
         , Attrs.spellcheck False
         , Attrs.placeholder "subject"
         , onInput (FieldUpdated Subject)
@@ -176,43 +190,15 @@ threadSubjectView =
         []
 
 
-newThreadInputStyle : Attribute Msg
-newThreadInputStyle =
-    [ Style.border1Inset
-    , Style.defaultSpacing
-    , backgroundColor Colors.background1
-    , flex2 (int 0) (int 1)
-    , outline none
-    , color Colors.primary0
-    , Style.font
-    , Style.fontSmoothingNone
-    ]
-        |> css
-
-
 newThreadContentView : Html Msg
 newThreadContentView =
     textarea
-        [ newThreadContentStyle
+        [ css [ Style.textarea ]
         , Attrs.spellcheck False
         , Attrs.placeholder "new thread content.."
         , onInput (FieldUpdated Content)
         ]
         []
-
-
-newThreadContentStyle : Attribute Msg
-newThreadContentStyle =
-    [ Style.border1Inset
-    , Style.defaultSpacing
-    , backgroundColor Colors.background1
-    , flex2 (int 1) (int 1)
-    , outline none
-    , color Colors.primary0
-    , Style.fontSmoothingNone
-    , Style.font
-    ]
-        |> css
 
 
 newThreadButtonView : Html Msg
