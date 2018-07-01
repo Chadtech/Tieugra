@@ -4,7 +4,8 @@ import Browser
 import Browser.Navigation as Navigation
 import Data.Flags as Flags exposing (Flags)
 import Data.Taco as Taco
-import Html.Styled as Html exposing (Html, div, p)
+import Html.Custom exposing (p)
+import Html.Styled as Html exposing (Html, div)
 import Json.Decode as D exposing (Value)
 import Model exposing (Model)
 import Msg exposing (Msg(..))
@@ -84,10 +85,8 @@ view result =
             { title = "Error"
             , body =
                 err
-                    |> Debug.log "ERR"
                     |> D.errorToString
                     |> (++) "An Error occured! : "
-                    --"doink"
                     |> Html.text
                     |> List.singleton
                     |> p []
