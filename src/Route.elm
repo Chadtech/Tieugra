@@ -2,18 +2,21 @@ module Route
     exposing
         ( Route(..)
         , fromUrl
+        , goTo
         , toUrl
         )
 
-import Browser.Navigation
+import Browser.Navigation as Navigation
+import Data.Taco exposing (Taco)
 import Id exposing (Id)
 import Url exposing (Url)
-import Url.Parser as Url exposing (Parser, s, top)
+import Url.Parser as Url exposing ((</>), Parser, s, top)
 
 
 type Route
     = Home
-    | Topic Id
+    | Board Id
+    | Thread Id Id
 
 
 fromUrl : Url -> Result String Route
@@ -26,9 +29,15 @@ fromUrl url =
 routeParser : Parser (Route -> a) a
 routeParser =
     [ Url.map Home top
-    , Url.map Topic (Url.custom "ID" (Just << Id.fromString))
+    , Url.map Board id
+    , Url.map Thread (id </> id)
     ]
         |> Url.oneOf
+
+
+id : Parser (Id -> b) b
+id =
+    Url.custom "ID" (Just << Id.fromString)
 
 
 toUrl : Route -> String
@@ -42,5 +51,16 @@ toPieces route =
         Home ->
             []
 
-        Topic id ->
-            [ Id.toString id ]
+        Board boardId ->
+            [ Id.toString boardId ]
+
+        Thread boardId threadId ->
+            [ Id.toString boardId
+            , Id.toString threadId
+            ]
+
+
+goTo : Taco -> Route -> Cmd msg
+goTo { navigationKey } route =
+    toUrl route
+        |> Navigation.pushUrl navigationKey

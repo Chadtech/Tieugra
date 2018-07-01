@@ -1,13 +1,15 @@
 module Data.Taco
     exposing
         ( Taco
+        , clearDbs
         , getPosts
         , getThread
-        , getThreads
+        , getThreadsOfBoard
         , getThreadsPosts
         , init
         , insertPost
         , insertThread
+        , setDefaultName
         , setSeed
         )
 
@@ -19,38 +21,65 @@ import Db exposing (Db)
 import Id exposing (Id)
 import List.NonEmpty exposing (NonEmptyList)
 import Random exposing (Seed)
+import Set exposing (Set)
 
 
 type alias Taco =
-    { threads : Db Thread
+    { boards : Db (List Id)
+    , threads : Db Thread
     , posts : Db Post
     , navigationKey : Navigation.Key
-    , apiKeySet : Bool
     , seed : Seed
+    , defaultName : Maybe String
     }
 
 
 init : Navigation.Key -> Flags -> Taco
 init key flags =
-    { threads = Db.empty
+    { boards = Db.empty
+    , threads = Db.empty
     , posts = Db.empty
     , navigationKey = key
-    , apiKeySet = flags.apiKeySet
     , seed = flags.seed
+    , defaultName = flags.defaultName
     }
 
 
-setSeed : Taco -> Seed -> Taco
-setSeed taco seed =
+
+-- HELPERS --
+
+
+setDefaultName : String -> Taco -> Taco
+setDefaultName defaultName taco =
+    { taco | defaultName = Just defaultName }
+
+
+setSeed : Seed -> Taco -> Taco
+setSeed seed taco =
     { taco | seed = seed }
 
 
-insertThread : Id -> Thread -> Taco -> Taco
-insertThread id thread taco =
+insertThread : Id -> Id -> Thread -> Taco -> Taco
+insertThread boardId threadId thread taco =
     { taco
         | threads =
-            Db.insert id thread taco.threads
+            Db.insert threadId thread taco.threads
+        , boards =
+            Db.update boardId (Just << addToBoard threadId) taco.boards
     }
+
+
+addToBoard : Id -> Maybe (List Id) -> List Id
+addToBoard threadId maybeBoard =
+    case maybeBoard of
+        Just board ->
+            if List.member threadId board then
+                board
+            else
+                threadId :: board
+
+        Nothing ->
+            threadId :: []
 
 
 insertPost : Id -> Post -> Taco -> Taco
@@ -66,9 +95,28 @@ getThread taco id =
     Db.get taco.threads id
 
 
-getThreads : Taco -> List ( Id, Thread )
-getThreads taco =
-    Db.toList taco.threads
+getThreadsOfBoard : Taco -> Id -> List ( Id, Thread )
+getThreadsOfBoard taco boardId =
+    boardId
+        |> Db.get taco.boards
+        |> Tuple.second
+        |> Maybe.withDefault []
+        |> getThreads taco
+
+
+getThreads : Taco -> List Id -> List ( Id, Thread )
+getThreads taco threadIds =
+    case threadIds of
+        first :: rest ->
+            case Tuple.second <| Db.get taco.threads first of
+                Just thread ->
+                    ( first, thread ) :: getThreads taco rest
+
+                Nothing ->
+                    getThreads taco rest
+
+        [] ->
+            []
 
 
 getThreadsPosts : Taco -> Thread -> NonEmptyList ( Id, Maybe Post )
@@ -84,3 +132,11 @@ getPosts taco =
 getPost : Taco -> Id -> ( Id, Maybe Post )
 getPost taco id =
     Db.get taco.posts id
+
+
+clearDbs : Taco -> Taco
+clearDbs taco =
+    { taco
+        | posts = Db.empty
+        , threads = Db.empty
+    }

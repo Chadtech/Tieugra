@@ -1,13 +1,13 @@
 module Page exposing (Page(..))
 
+import Page.Board as Board
 import Page.Home as Home
-import Page.Password as Password
-import Page.Topic as Topic
+import Page.Thread as Thread
 
 
 type Page
     = Home Home.Model
-    | Topic Topic.Model
-    | Password Password.Model
+    | Board Board.Model
+    | Thread Thread.Model
     | Error
     | Blank

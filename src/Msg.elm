@@ -9,28 +9,28 @@ import Data.Post as Post exposing (Post)
 import Data.Thread as Thread exposing (Thread)
 import Db
 import Id exposing (Id)
-import Json.Decode as Decode
+import Json.Decode as D
     exposing
         ( Decoder
         , Value
         , decodeValue
         )
 import List.NonEmpty exposing (NonEmptyList)
+import Page.Board as Board
 import Page.Home as Home
-import Page.Password as Password
-import Page.Topic as Topic
+import Page.Thread
 import Route exposing (Route)
 
 
 type Msg
     = RouteChanged (Result String Route)
     | UrlRequested UrlRequest
+    | BoardMsg Board.Msg
+    | ThreadMsg Page.Thread.Msg
     | HomeMsg Home.Msg
-    | TopicMsg Topic.Msg
-    | PasswordMsg Password.Msg
-    | ReceivedThread Id Thread
+    | ReceivedThread Id Id Thread
     | ReceivedPost Id Post
-    | MsgDecodeFailed Decode.Error
+    | MsgDecodeFailed String
 
 
 decode : Value -> Msg
@@ -40,30 +40,31 @@ decode json =
             msg
 
         Err err ->
-            MsgDecodeFailed err
+            MsgDecodeFailed (D.errorToString err)
 
 
 decoder : Decoder Msg
 decoder =
-    Decode.string
-        |> Decode.field "type"
-        |> Decode.andThen
-            (Decode.field "payload" << fromType)
+    D.string
+        |> D.field "type"
+        |> D.andThen
+            (D.field "payload" << fromType)
 
 
 fromType : String -> Decoder Msg
 fromType type_ =
     case type_ of
         "received-thread" ->
-            Decode.map2 ReceivedThread
-                (Decode.field "id" Id.decoder)
-                Thread.decoder
+            D.map3 ReceivedThread
+                (D.at [ "thread", "boardId" ] Id.decoder)
+                (D.field "id" Id.decoder)
+                (D.field "thread" Thread.decoder)
 
         "received-post" ->
-            Decode.map2 ReceivedPost
-                (Decode.field "id" Id.decoder)
-                (Decode.field "post" Post.decoder)
+            D.map2 ReceivedPost
+                (D.field "id" Id.decoder)
+                (D.field "post" Post.decoder)
 
         _ ->
-            Decode.fail
+            D.fail
                 ("Unrecognized incoming msg type -> " ++ type_)

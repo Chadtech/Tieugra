@@ -17,6 +17,8 @@ import Html.Styled as Html
 import Html.Styled.Attributes as Attrs exposing (css)
 import Id exposing (Id)
 import Style
+import Time exposing (Posix)
+import Util
 
 
 view : ( Id, Maybe Post ) -> Html msg
@@ -40,14 +42,7 @@ bodyView : ( Id, Maybe Post ) -> List (Html msg)
 bodyView ( id, maybePost ) =
     case maybePost of
         Just post ->
-            [ [ p
-                    []
-                    [ Html.text ("name : " ++ post.author) ]
-              , p
-                    []
-                    [ Html.text ("post : " ++ Id.toString id) ]
-              , br [] []
-              ]
+            [ metaDataView id post
             , post.content
                 |> List.map sectionView
                 |> List.intersperse (br [] [])
@@ -64,6 +59,26 @@ bodyView ( id, maybePost ) =
                 |> List.singleton
                 |> p []
                 |> List.singleton
+
+
+metaDataView : Id -> Post -> List (Html msg)
+metaDataView id post =
+    [ p
+        []
+        [ Html.text ("name : " ++ post.author) ]
+    , p
+        []
+        [ Html.text ("post : " ++ Id.toString id) ]
+    , p
+        []
+        [ Html.text (timeStr post.createdAt) ]
+    , br [] []
+    ]
+
+
+timeStr : Posix -> String
+timeStr time =
+    "created at : " ++ Util.humanReadableTime time
 
 
 sectionView : String -> Html msg

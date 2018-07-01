@@ -1,15 +1,17 @@
 module Update exposing (update)
 
 import Data.Post as Post
-import Data.Taco as Taco
-import Data.Thread as Thread exposing (Thread)
+import Data.Taco as Taco exposing (Taco)
+import Data.Thread exposing (Thread)
 import List.NonEmpty exposing (NonEmptyList)
 import Model exposing (Model)
 import Msg exposing (Msg(..))
 import Page
+import Page.Board as Board
 import Page.Home as Home
-import Page.Password as Password
-import Page.Topic as Topic
+import Page.Thread as Thread
+import Ports
+import Random exposing (Seed)
 import Return2 as R2
 import Return3 as R3
 import Route exposing (Route)
@@ -25,10 +27,6 @@ update msg model =
             model |> R2.withNoCmd
 
         UrlRequested request ->
-            let
-                _ =
-                    Debug.log "Request" request
-            in
             model
                 |> R2.withNoCmd
 
@@ -37,32 +35,40 @@ update msg model =
                 Page.Home subModel ->
                     subModel
                         |> Home.update model.taco subMsg
-                        |> R3.mapCmd HomeMsg
-                        |> R3.incorp handleHomeReturn model
+                        |> R2.mapModel (Model.setPage model Page.Home)
+                        |> R2.mapCmd HomeMsg
 
                 _ ->
                     model
                         |> R2.withNoCmd
 
-        TopicMsg subMsg ->
-            model |> R2.withNoCmd
-
-        PasswordMsg subMsg ->
+        BoardMsg subMsg ->
             case model.page of
-                Page.Password subModel ->
+                Page.Board subModel ->
                     subModel
-                        |> Password.update subMsg
-                        |> R2.mapCmd PasswordMsg
-                        |> R2.mapModel
-                            (Model.setPage model Page.Password)
+                        |> Board.update model.taco subMsg
+                        |> R3.mapCmd BoardMsg
+                        |> R3.incorp handleBoardReturn model
 
                 _ ->
                     model
                         |> R2.withNoCmd
 
-        ReceivedThread id thread ->
+        ThreadMsg subMsg ->
+            case model.page of
+                Page.Thread subModel ->
+                    subModel
+                        |> Thread.update model.taco subMsg
+                        |> R3.mapCmd ThreadMsg
+                        |> R3.incorp handleThreadReturn model
+
+                _ ->
+                    model
+                        |> R2.withNoCmd
+
+        ReceivedThread boardId threadId thread ->
             model.taco
-                |> Taco.insertThread id thread
+                |> Taco.insertThread boardId threadId thread
                 |> Model.setTaco model
                 |> R2.withCmds (getPostsCmd thread)
 
@@ -77,19 +83,44 @@ update msg model =
                 |> R2.withNoCmd
 
 
-handleHomeReturn : Home.Model -> Maybe Home.Reply -> Model -> ( Model, Cmd Msg )
-handleHomeReturn homeModel maybeReply model =
+handleBoardReturn : Board.Model -> Maybe Board.Reply -> Model -> ( Model, Cmd Msg )
+handleBoardReturn boardModel maybeReply model =
+    let
+        result =
+            { model | page = Page.Board boardModel }
+                |> R2.withNoCmd
+    in
     case maybeReply of
         Nothing ->
-            { model | page = Page.Home homeModel }
-                |> R2.withNoCmd
+            result
 
-        Just (Home.NewSeed seed) ->
-            seed
-                |> Taco.setSeed model.taco
-                |> Model.setTaco
-                    { model | page = Page.Home homeModel }
+        Just (Board.ThreadSubmitted seed defaultName) ->
+            R2.mapModel
+                (setNameAndSeed seed defaultName)
+                result
+
+
+handleThreadReturn : Thread.Model -> Maybe Thread.Reply -> Model -> ( Model, Cmd Msg )
+handleThreadReturn topicModel maybeReply model =
+    let
+        result =
+            { model | page = Page.Thread topicModel }
                 |> R2.withNoCmd
+    in
+    case maybeReply of
+        Nothing ->
+            result
+
+        Just (Thread.PostSubmitted seed defaultName) ->
+            R2.mapModel
+                (setNameAndSeed seed defaultName)
+                result
+
+
+setNameAndSeed : Seed -> String -> Model -> Model
+setNameAndSeed seed defaultName =
+    Model.mapTaco
+        (Taco.setSeed seed >> Taco.setDefaultName defaultName)
 
 
 getPostsCmd : Thread -> List (Cmd Msg)
@@ -99,32 +130,40 @@ getPostsCmd { posts } =
         |> List.map Post.get
 
 
+
+-- ROUTING --
+
+
 handleRoute : Route -> Model -> ( Model, Cmd Msg )
 handleRoute route model =
     case route of
         Route.Home ->
             { model
-                | page =
-                    Page.Home Home.init
+                | page = Page.Home Home.init
             }
-                |> maybeRedirectToPassword
+                |> R2.withNoCmd
 
-        Route.Topic id ->
+        Route.Board boardId ->
             { model
                 | page =
-                    Page.Topic (Topic.init id)
+                    model.taco.defaultName
+                        |> Maybe.withDefault ""
+                        |> Board.init boardId
+                        |> Page.Board
             }
-                |> maybeRedirectToPassword
+                |> R2.withCmd
+                    (Ports.send (Ports.GetAllThreads boardId))
 
-
-maybeRedirectToPassword : Model -> ( Model, Cmd Msg )
-maybeRedirectToPassword model =
-    if model.taco.apiKeySet then
-        model
-            |> R2.withNoCmd
-    else
-        { model
-            | page =
-                Page.Password Password.init
-        }
-            |> R2.withNoCmd
+        Route.Thread boardId threadId ->
+            { model
+                | page =
+                    { boardId = boardId
+                    , threadId = threadId
+                    , defaultName =
+                        model.taco.defaultName
+                            |> Maybe.withDefault ""
+                    }
+                        |> Thread.init
+                        |> Page.Thread
+            }
+                |> R2.withNoCmd

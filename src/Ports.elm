@@ -13,9 +13,9 @@ import Util exposing (def)
 
 type JsMsg
     = GetPost Id
-    | GetAllThreads
-    | SubmitPassword String
+    | GetAllThreads Id
     | SubmitNewThread NewThreadSubmission
+    | SubmitNewPost NewPostSubmission
 
 
 type alias NewThreadSubmission =
@@ -24,6 +24,16 @@ type alias NewThreadSubmission =
     , content : List String
     , postId : Id
     , threadId : Id
+    , boardId : Id
+    }
+
+
+type alias NewPostSubmission =
+    { author : String
+    , content : List String
+    , postId : Id
+    , threadId : Id
+    , boardId : Id
     }
 
 
@@ -53,25 +63,35 @@ send msg =
             "getPost"
                 |> withPayload (Id.encode id)
 
-        GetAllThreads ->
-            "getAllThreads"
-                |> noPayload
-
-        SubmitPassword str ->
-            "submitPassword"
-                |> withPayload (E.string str)
+        GetAllThreads boardId ->
+            [ def "boardId" <| Id.encode boardId ]
+                |> E.object
+                |> withType "getAllThreads"
 
         SubmitNewThread submission ->
-            [ def "author" (E.string submission.author)
-            , def "subject" (E.string submission.subject)
-            , def "postId" (Id.encode submission.postId)
-            , def "threadId" (Id.encode submission.threadId)
+            [ def "author" <| E.string submission.author
+            , def "subject" <| E.string submission.subject
+            , def "postId" <| Id.encode submission.postId
+            , def "threadId" <| Id.encode submission.threadId
+            , def "boardId" <| Id.encode submission.boardId
             , submission.content
                 |> E.list E.string
                 |> def "content"
             ]
                 |> E.object
                 |> withType "submitNewThread"
+
+        SubmitNewPost submission ->
+            [ def "author" <| E.string submission.author
+            , def "postId" <| Id.encode submission.postId
+            , def "threadId" <| Id.encode submission.threadId
+            , def "boardId" <| Id.encode submission.boardId
+            , submission.content
+                |> E.list E.string
+                |> def "content"
+            ]
+                |> E.object
+                |> withType "submitNewPost"
 
 
 port fromJs : (Value -> msg) -> Sub msg

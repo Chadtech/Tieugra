@@ -7,7 +7,6 @@ import Css exposing (..)
 border1 : Style
 border1 =
     [ border3 (px 1) outset Colors.primary1
-    , borderRadius (px 5)
     ]
         |> Css.batch
 
@@ -15,7 +14,6 @@ border1 =
 border1Inset : Style
 border1Inset =
     [ border3 (px 1) inset Colors.primary1
-    , borderRadius (px 5)
     ]
         |> Css.batch
 
@@ -23,7 +21,6 @@ border1Inset =
 border2 : Style
 border2 =
     [ border3 (px 1) outset Colors.primary2
-    , borderRadius (px 5)
     ]
         |> Css.batch
 
@@ -38,18 +35,27 @@ defaultSpacing =
 
 font : Style
 font =
-    [ fontSize (px 16)
-    , fontFamilies [ "sans-serif" ]
+    [ fontSize (px 18)
+    , fontFamilies [ "serif" ]
     ]
         |> Css.batch
 
 
 p : Style
 p =
-    [ fontFamilies [ "sans-serif" ]
-    , color Colors.primary0
+    [ color Colors.primary0
     , margin zero
-    , fontSmoothingNone
+    , font
+    ]
+        |> Css.batch
+
+
+headerContainer : Style
+headerContainer =
+    [ box
+    , minHeight maxContent
+    , displayFlex
+    , flexDirection row
     ]
         |> Css.batch
 
@@ -61,10 +67,10 @@ button =
     , defaultSpacing
     , outline none
     , color Colors.primary0
-    , fontSmoothingNone
     , font
     , hover [ color Colors.primary2 ]
     , active [ border1Inset ]
+    , cursor pointer
     ]
         |> Css.batch
 
@@ -78,7 +84,6 @@ input =
     , outline none
     , color Colors.primary0
     , font
-    , fontSmoothingNone
     ]
         |> Css.batch
 
@@ -91,19 +96,13 @@ textarea =
     , flex2 (int 1) (int 1)
     , outline none
     , color Colors.primary0
-    , fontSmoothingNone
     , font
     ]
         |> Css.batch
 
 
-fontSmoothingNone : Style
-fontSmoothingNone =
-    property "-webkit-font-smoothing" "none"
-
-
-thread : Style
-thread =
+box : Style
+box =
     [ border1
     , defaultSpacing
     , backgroundColor Colors.background1
@@ -112,3 +111,8 @@ thread =
     , minHeight (px 100)
     ]
         |> Css.batch
+
+
+maxWidth : Style
+maxWidth =
+    Css.maxWidth (px 1080)

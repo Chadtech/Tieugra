@@ -1,7 +1,6 @@
 module Html.Custom
     exposing
-        ( argueChanTitle
-        , p
+        ( p
         )
 
 import Html.Styled as Html exposing (Attribute, Html)
@@ -12,8 +11,3 @@ import Style
 p : List (Attribute msg) -> List (Html msg) -> Html msg
 p attrs =
     Html.p (css [ Style.p ] :: attrs)
-
-
-argueChanTitle : Html msg
-argueChanTitle =
-    p [] [ Html.text "Argue Chan" ]

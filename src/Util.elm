@@ -1,10 +1,9 @@
 module Util exposing (..)
 
-import Html exposing (Attribute, Html)
-import Html.Events exposing (keyCode, on)
-import Json.Decode as Decode exposing (Decoder)
-import Process
-import Task
+import Html.Styled exposing (Attribute)
+import Html.Styled.Events exposing (keyCode, on)
+import Json.Decode as D exposing (Decoder)
+import Time exposing (Month(..), Posix, Zone)
 
 
 -- TUPLE --
@@ -16,55 +15,77 @@ def =
 
 
 
--- MAYBE --
+-- STRING --
 
 
-maybeCons : Maybe a -> List a -> List a
-maybeCons maybe list =
-    case maybe of
-        Just item ->
-            item :: list
-
-        Nothing ->
-            list
-
-
-maybeValues : List (Maybe a) -> List a
-maybeValues maybes =
-    case maybes of
-        (Just v) :: rest ->
-            v :: maybeValues rest
-
-        Nothing :: rest ->
-            maybeValues rest
-
-        [] ->
-            []
+strReplace : String -> String -> String -> String
+strReplace src target =
+    String.split target >> String.join src
 
 
 
--- LIST --
+-- DECODERS --
 
 
-contains : List a -> a -> Bool
-contains list member =
-    List.member member list
+createdAtDecoder : Decoder Posix
+createdAtDecoder =
+    D.field "createdAt" (D.map Time.millisToPosix D.int)
 
 
-appendTo : List a -> List a -> List a
-appendTo a b =
-    List.append b a
+humanReadableTime : Posix -> String
+humanReadableTime time =
+    [ Time.toYear germanTimeZone time
+    , Time.toMonth germanTimeZone time
+        |> monthToInt
+    , Time.toDay germanTimeZone time
+    ]
+        |> List.map String.fromInt
+        |> String.join " "
 
 
+monthToInt : Month -> Int
+monthToInt month =
+    case month of
+        Jan ->
+            1
 
--- TASK --
+        Feb ->
+            2
+
+        Mar ->
+            3
+
+        Apr ->
+            4
+
+        May ->
+            5
+
+        Jun ->
+            6
+
+        Jul ->
+            7
+
+        Aug ->
+            8
+
+        Sep ->
+            9
+
+        Oct ->
+            10
+
+        Nov ->
+            11
+
+        Dec ->
+            12
 
 
-delay : Float -> msg -> Cmd msg
-delay time msg =
-    Process.sleep time
-        |> Task.andThen (always <| Task.succeed msg)
-        |> Task.perform identity
+germanTimeZone : Zone
+germanTimeZone =
+    Time.customZone 1 []
 
 
 
@@ -73,20 +94,15 @@ delay time msg =
 
 onEnter : msg -> Attribute msg
 onEnter msg =
-    on "keydown" (Decode.andThen (enterDecoder msg) keyCode)
+    on "keydown"
+        (keyCode |> D.andThen (enterDecoder msg))
 
 
 enterDecoder : msg -> Int -> Decoder msg
-enterDecoder msg code =
-    if code == 13 then
-        Decode.succeed msg
-    else
-        Decode.fail "Not enter"
+enterDecoder msg keyCode =
+    case keyCode of
+        13 ->
+            D.succeed msg
 
-
-viewIf : Bool -> Html msg -> Html msg
-viewIf condition html =
-    if condition then
-        html
-    else
-        Html.text ""
+        _ ->
+            D.fail "Not enter key"

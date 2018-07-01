@@ -45,9 +45,7 @@ init : Value -> Url -> Navigation.Key -> ( Result D.Error Model, Cmd Msg )
 init json url key =
     case D.decodeValue Flags.decoder json of
         Ok flags ->
-            { page = Page.Blank
-            , taco = Taco.init key flags
-            }
+            Model.init json flags key
                 |> Update.update (onUrlChange url)
                 |> Tuple.mapFirst Ok
 

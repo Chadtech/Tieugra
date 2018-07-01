@@ -1,7 +1,8 @@
-module Page.Topic
+module Page.Thread
     exposing
         ( Model
         , Msg
+        , Reply(..)
         , init
         , update
         , view
@@ -26,9 +27,11 @@ import Html.Styled.Attributes as Attrs exposing (css)
 import Html.Styled.Events exposing (onClick, onInput)
 import Id exposing (Id)
 import List.NonEmpty
-import Random
+import Ports
+import Random exposing (Seed)
 import Return2 as R2
 import Return3 as R3 exposing (Return)
+import Route
 import Style
 
 
@@ -37,6 +40,7 @@ import Style
 
 type alias Model =
     { threadId : Id
+    , boardId : Id
     , newPostContent : String
     , newPostAuthor : String
     }
@@ -45,6 +49,8 @@ type alias Model =
 type Msg
     = FieldUpdated Field String
     | PostNewPostClicked
+    | ArgueChanClicked
+    | BoardClicked Id
 
 
 type Field
@@ -53,19 +59,32 @@ type Field
 
 
 type Reply
-    = NewSeed
+    = PostSubmitted Seed String
+
+
+type alias Flags =
+    { boardId : Id
+    , threadId : Id
+    , defaultName : String
+    }
 
 
 
 -- INIT --
 
 
-init : Id -> Model
-init id =
-    { threadId = id
+init : Flags -> Model
+init { boardId, threadId, defaultName } =
+    { threadId = threadId
+    , boardId = boardId
     , newPostContent = ""
-    , newPostAuthor = ""
+    , newPostAuthor = defaultName
     }
+
+
+reInit : Model -> Model
+reInit model =
+    { model | newPostContent = "" }
 
 
 
@@ -86,15 +105,38 @@ update taco msg model =
             else
                 submitPost taco model
 
+        ArgueChanClicked ->
+            Route.Home
+                |> Route.goTo taco
+                |> R2.withModel model
+                |> R3.withNoReply
+
+        BoardClicked id ->
+            id
+                |> Route.Board
+                |> Route.goTo taco
+                |> R2.withModel model
+                |> R3.withNoReply
+
 
 submitPost : Taco -> Model -> Return Model Msg Reply
 submitPost taco model =
     let
-        ( threadId, newSeed ) =
+        ( postId, newSeed ) =
             Random.step Id.generator taco.seed
     in
-    model
-        |> R3.withNothing
+    { author = model.newPostAuthor
+    , content =
+        model.newPostContent
+            |> String.split "\n"
+    , postId = postId
+    , threadId = model.threadId
+    , boardId = model.boardId
+    }
+        |> Ports.SubmitNewPost
+        |> Ports.send
+        |> R2.withModel (reInit model)
+        |> R3.withReply (PostSubmitted newSeed model.newPostAuthor)
 
 
 handleFieldUpdate : Field -> String -> Model -> Model
@@ -113,32 +155,64 @@ handleFieldUpdate field str model =
 
 view : Taco -> Model -> List (Html Msg)
 view taco model =
-    [ Html.Custom.argueChanTitle
-    , newPostView
-    ]
-        ++ postsView taco model
+    model
+        |> postsView taco
+        |> (::) (newPostView model)
+        |> (::) (header model.boardId)
 
 
-newPostView : Html Msg
-newPostView =
+
+-- Header --
+
+
+header : Id -> Html Msg
+header id =
+    div
+        [ css [ Style.headerContainer ] ]
+        [ button
+            [ css
+                [ Style.button
+                , flex (int 1)
+                ]
+            , onClick ArgueChanClicked
+            ]
+            [ Html.text "Argue Chan" ]
+        , button
+            [ css
+                [ Style.button
+                , flex (int 1)
+                ]
+            , onClick (BoardClicked id)
+            ]
+            [ Html.text (Id.toString id) ]
+        ]
+
+
+
+-- New Post --
+
+
+newPostView : Model -> Html Msg
+newPostView model =
     div
         [ css
             [ height (px 200)
-            , Style.thread
+            , Style.box
             ]
         ]
-        [ postAuthorView
+        [ postAuthorView model
         , newPostContentView
         , newPostButtonView
         ]
 
 
-postAuthorView : Html Msg
-postAuthorView =
+postAuthorView : Model -> Html Msg
+postAuthorView model =
     input
         [ css [ Style.input ]
         , Attrs.spellcheck False
         , Attrs.placeholder "name"
+        , Attrs.value model.newPostAuthor
         , onInput (FieldUpdated Author)
         ]
         []
@@ -161,7 +235,11 @@ newPostButtonView =
         [ css [ Style.button ]
         , onClick PostNewPostClicked
         ]
-        [ Html.text "post new thread" ]
+        [ Html.text "submit new post" ]
+
+
+
+-- Thread content --
 
 
 postsView : Taco -> Model -> List (Html Msg)
@@ -169,7 +247,7 @@ postsView taco model =
     model.threadId
         |> Taco.getThread taco
         |> maybeThreadView taco
-        |> div [ css [ Style.thread ] ]
+        |> div [ css [ Style.box ] ]
         |> List.singleton
 
 
