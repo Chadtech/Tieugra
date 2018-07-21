@@ -35,8 +35,8 @@ view model =
 
 
 pageView : Model -> List (Html Msg)
-pageView model =
-    case model.page of
+pageView ( taco, page ) =
+    case page of
         Page.Home subModel ->
             subModel
                 |> Home.view
@@ -44,12 +44,12 @@ pageView model =
 
         Page.Board subModel ->
             subModel
-                |> Board.view model.taco
+                |> Board.view taco
                 |> List.map (Html.map BoardMsg)
 
         Page.Thread subModel ->
             subModel
-                |> Thread.view model.taco
+                |> Thread.view taco
                 |> List.map (Html.map ThreadMsg)
 
         Page.Error ->

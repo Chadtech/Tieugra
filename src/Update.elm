@@ -18,7 +18,7 @@ import Route exposing (Route)
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
-update msg model =
+update msg (( taco, page ) as model) =
     case msg of
         RouteChanged (Ok route) ->
             handleRoute route model
@@ -31,11 +31,12 @@ update msg model =
                 |> R2.withNoCmd
 
         HomeMsg subMsg ->
-            case model.page of
+            case page of
                 Page.Home subModel ->
                     subModel
-                        |> Home.update model.taco subMsg
-                        |> R2.mapModel (Model.setPage model Page.Home)
+                        |> Home.update taco subMsg
+                        |> R2.mapModel Page.Home
+                        |> R2.mapModel (Model.setPage model)
                         |> R2.mapCmd HomeMsg
 
                 _ ->
@@ -43,10 +44,10 @@ update msg model =
                         |> R2.withNoCmd
 
         BoardMsg subMsg ->
-            case model.page of
+            case page of
                 Page.Board subModel ->
                     subModel
-                        |> Board.update model.taco subMsg
+                        |> Board.update taco subMsg
                         |> R3.mapCmd BoardMsg
                         |> R3.incorp handleBoardReturn model
 
@@ -55,10 +56,10 @@ update msg model =
                         |> R2.withNoCmd
 
         ThreadMsg subMsg ->
-            case model.page of
+            case page of
                 Page.Thread subModel ->
                     subModel
-                        |> Thread.update model.taco subMsg
+                        |> Thread.update taco subMsg
                         |> R3.mapCmd ThreadMsg
                         |> R3.incorp handleThreadReturn model
 
@@ -67,13 +68,13 @@ update msg model =
                         |> R2.withNoCmd
 
         ReceivedThread boardId threadId thread ->
-            model.taco
+            taco
                 |> Taco.insertThread boardId threadId thread
                 |> Model.setTaco model
                 |> R2.withCmds (getPostsCmd thread)
 
         ReceivedPost id post ->
-            model.taco
+            taco
                 |> Taco.insertPost id post
                 |> Model.setTaco model
                 |> R2.withNoCmd
@@ -87,7 +88,9 @@ handleBoardReturn : Board.Model -> Maybe Board.Reply -> Model -> ( Model, Cmd Ms
 handleBoardReturn boardModel maybeReply model =
     let
         result =
-            { model | page = Page.Board boardModel }
+            boardModel
+                |> Page.Board
+                |> Model.setPage model
                 |> R2.withNoCmd
     in
     case maybeReply of
@@ -101,10 +104,12 @@ handleBoardReturn boardModel maybeReply model =
 
 
 handleThreadReturn : Thread.Model -> Maybe Thread.Reply -> Model -> ( Model, Cmd Msg )
-handleThreadReturn topicModel maybeReply model =
+handleThreadReturn threadModel maybeReply model =
     let
         result =
-            { model | page = Page.Thread topicModel }
+            threadModel
+                |> Page.Thread
+                |> Model.setPage model
                 |> R2.withNoCmd
     in
     case maybeReply of
@@ -119,8 +124,8 @@ handleThreadReturn topicModel maybeReply model =
 
 setNameAndSeed : Seed -> String -> Model -> Model
 setNameAndSeed seed defaultName =
-    Model.mapTaco
-        (Taco.setSeed seed >> Taco.setDefaultName defaultName)
+    (Taco.setSeed seed >> Taco.setDefaultName defaultName)
+        |> Model.mapTaco
 
 
 getPostsCmd : Thread -> List (Cmd Msg)
@@ -135,35 +140,29 @@ getPostsCmd { posts } =
 
 
 handleRoute : Route -> Model -> ( Model, Cmd Msg )
-handleRoute route model =
+handleRoute route ( taco, page ) =
     case route of
         Route.Home ->
-            { model
-                | page = Page.Home Home.init
-            }
+            ( taco, Page.Home Home.init )
                 |> R2.withNoCmd
 
         Route.Board boardId ->
-            { model
-                | page =
-                    model.taco.defaultName
-                        |> Maybe.withDefault ""
-                        |> Board.init boardId
-                        |> Page.Board
-            }
+            taco.defaultName
+                |> Maybe.withDefault ""
+                |> Board.init boardId
+                |> Page.Board
+                |> Tuple.pair taco
                 |> R2.withCmd
                     (Ports.send (Ports.GetAllThreads boardId))
 
         Route.Thread boardId threadId ->
-            { model
-                | page =
-                    { boardId = boardId
-                    , threadId = threadId
-                    , defaultName =
-                        model.taco.defaultName
-                            |> Maybe.withDefault ""
-                    }
-                        |> Thread.init
-                        |> Page.Thread
+            { boardId = boardId
+            , threadId = threadId
+            , defaultName =
+                taco.defaultName
+                    |> Maybe.withDefault ""
             }
+                |> Thread.init
+                |> Page.Thread
+                |> Tuple.pair taco
                 |> R2.withNoCmd

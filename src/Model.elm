@@ -17,16 +17,12 @@ import Page exposing (Page)
 
 
 type alias Model =
-    { page : Page
-    , taco : Taco
-    }
+    ( Taco, Page )
 
 
 init : Value -> Flags -> Navigation.Key -> Model
 init json flags key =
-    { page = Page.Blank
-    , taco = Taco.init key flags
-    }
+    ( Taco.init key flags, Page.Blank )
 
 
 
@@ -34,15 +30,15 @@ init json flags key =
 
 
 mapTaco : (Taco -> Taco) -> Model -> Model
-mapTaco f model =
-    { model | taco = f model.taco }
+mapTaco f =
+    Tuple.mapFirst f
 
 
 setTaco : Model -> Taco -> Model
-setTaco model taco =
-    { model | taco = taco }
+setTaco ( _, page ) newTaco =
+    ( newTaco, page )
 
 
-setPage : Model -> (a -> Page) -> a -> Model
-setPage model f subModel =
-    { model | page = f subModel }
+setPage : Model -> Page -> Model
+setPage ( taco, _ ) newPage =
+    ( taco, newPage )
